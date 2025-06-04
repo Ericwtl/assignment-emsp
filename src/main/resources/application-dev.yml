@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/emsp_db  # 指向 Docker 容器
+    username: emsp
+    password: emsp123
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate.ddl-auto: validate  # 禁止 Hibernate 自动建表
+  flyway:
+    enabled: true
+    locations: classpath:db/migration  # Flyway 脚本路径
+    baseline-on-migrate: true  # 允许空数据库初始化
+    clean-disabled: false   # 允许执行clean命令
+    validate-on-migrate: true   # 开发环境关闭校验

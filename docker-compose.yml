@@ -1,0 +1,15 @@
+version: '3.9'
+services:
+  postgres:  # 使用 PostgreSQL（与您配置一致）
+    image: postgres:15-alpine
+    container_name: assignment-db
+    environment:
+      POSTGRES_DB: emsp_db  # 数据库名（需与 application.yml 一致）
+      POSTGRES_USER: emsp         # 用户名
+      POSTGRES_PASSWORD: emsp123  # 密码
+    ports:
+      - "5432:5432"  # 映射到本地端口
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # 数据持久化
+volumes:
+  pgdata:  # 命名卷（避免数据丢失）
