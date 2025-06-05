@@ -28,6 +28,7 @@ public class AccountController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Account createAccount(@RequestBody Account account) {
+        //log.info("RECEIVED ACCOUNT: {}", account.getEmail()); // 添加此日志
         return accountService.createAccount(account);
     }
 

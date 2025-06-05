@@ -6,7 +6,7 @@ CREATE TABLE account (
     contract_id VARCHAR(14) NULL CHECK (
         contract_id IS NULL OR contract_id ~ '^[A-Z]{2}[0-9A-Z]{3}[0-9A-Z]{9}$'
     ),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('Created', 'Activated', 'Deactivated')),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('CREATED', 'ACTIVATED', 'DEACTIVATED')),
     last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -18,7 +18,7 @@ CREATE TABLE card (
     last_four_digits VARCHAR(4) NOT NULL,
     visible_number VARCHAR(19) GENERATED ALWAYS AS
         ('****-****-****-' || last_four_digits) STORED,  -- 修正拼接语法
-    status VARCHAR(20) NOT NULL CHECK (status IN ('Created', 'Assigned', 'Activated', 'Deactivated')),
+    status VARCHAR(20) NOT NULL CHECK (status IN ('CREATED', 'ASSIGNED', 'ACTIVATED', 'DEACTIVATED')),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 

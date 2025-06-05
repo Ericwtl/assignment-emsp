@@ -17,3 +17,10 @@ spring:
     baseline-on-migrate: true  # 允许空数据库初始化
     clean-disabled: false   # 允许执行clean命令
     validate-on-migrate: true   # 开发环境关闭校验
+logging:
+  level:
+    org:
+      springframework:
+        web:
+          servlet:
+            mvc=DEBUG:

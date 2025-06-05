@@ -22,11 +22,12 @@ public class Account {
     @Email(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
     private String email; // Primary key
 
-    @Column(name = "contract_id", nullable = false)
-    @Pattern(regexp = "^[A-Z]{2}[0-9A-Z]{3}[0-9A-Z]{9}$")
+    @Column(name = "contract_id", nullable = true)
+    @Pattern(regexp = "^(|([A-Z]{2}[0-9A-Z]{3}[0-9A-Z]{9}))$",
+            message = "Contract ID must comply with the EMAID standard or be empty.")
     private String contractId; // EMAID
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = true)
     @Enumerated(EnumType.STRING)
     private AccountStatus status = AccountStatus.CREATED;
 
