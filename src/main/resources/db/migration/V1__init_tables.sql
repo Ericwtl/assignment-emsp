@@ -15,7 +15,7 @@ CREATE TABLE card (
     uid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_email VARCHAR(255) NOT NULL REFERENCES account(email) ON DELETE CASCADE,
     encrypted_card BYTEA NOT NULL,  -- 修正为BYTEA类型
-    last_four_digits CHAR(4) NOT NULL,
+    last_four_digits VARCHAR(4) NOT NULL,
     visible_number VARCHAR(19) GENERATED ALWAYS AS
         ('****-****-****-' || last_four_digits) STORED,  -- 修正拼接语法
     status VARCHAR(20) NOT NULL CHECK (status IN ('Created', 'Assigned', 'Activated', 'Deactivated')),

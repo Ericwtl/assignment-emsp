@@ -1,4 +1,4 @@
-package com.emsp.assignment.card.domain;
+package com.emsp.assignment.domain.card.model;
 
 public enum CardStatus {
     CREATED,    // 卡已创建
