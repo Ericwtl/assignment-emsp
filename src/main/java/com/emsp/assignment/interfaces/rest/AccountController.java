@@ -1,7 +1,7 @@
-package com.emsp.assignment.interfaces.rest.account;
+package com.emsp.assignment.interfaces.rest;
 
 
-import com.emsp.assignment.application.account.AccountService;
+import com.emsp.assignment.application.AccountService;
 import com.emsp.assignment.domain.account.model.Account;
 import com.emsp.assignment.domain.account.service.AccountStateService;
 import org.springframework.data.domain.Page;
@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.data.domain.Pageable;
 
 @RestController
@@ -25,6 +27,7 @@ public class AccountController {
         this.accountStateService = accountStateService;
     }
 
+    //1.Create account.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Account createAccount(@RequestBody Account account) {
@@ -32,12 +35,14 @@ public class AccountController {
         return accountService.createAccount(account);
     }
 
+    //2.Active account.
     @PostMapping("/{email}/activate") // POST /api/accounts/test@example.com/activate
     @ResponseStatus(HttpStatus.OK)
     public void activateAccount(@PathVariable String email) {
         accountStateService.activateAccount(email);
     }
 
+    //3.Deactivate account.
     @PostMapping("/{email}/deactivate") // POST /api/accounts/test@example.com/deactivate
     @ResponseStatus(HttpStatus.OK)
     public void deactivateAccount(@PathVariable String email) {
@@ -48,8 +53,8 @@ public class AccountController {
     public Page<Account> getAccountsByUpdateTime(
             @RequestParam("start") LocalDateTime start,
             @RequestParam("end") LocalDateTime end,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(size = 20, sort = "lastUpdated") Pageable pageable) {
 
-        return accountService.getAccountsByUpdateTime(start, end, pageable);
+        return accountService.getAccountsWithCardsByLastUpdated(start, end, pageable);
     }
 }

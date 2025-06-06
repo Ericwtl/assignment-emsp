@@ -3,8 +3,8 @@ package com.emsp.assignment.domain.account.service;
 
 import com.emsp.assignment.domain.account.model.Account;
 import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
-import com.emsp.assignment.infrastructure.persistence.account.AccountRepository;
-import com.emsp.assignment.infrastructure.persistence.card.CardRepository;
+import com.emsp.assignment.infrastructure.persistence.AccountRepository;
+import com.emsp.assignment.infrastructure.persistence.CardRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
