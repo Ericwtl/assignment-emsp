@@ -32,4 +32,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleIllegalCardOperation(IllegalCardOperationException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
+
+
+    @ExceptionHandler(IllegalAccountOperationException.class)
+    public ResponseEntity<String> handleIllegalAccountOperation(IllegalAccountOperationException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
 }

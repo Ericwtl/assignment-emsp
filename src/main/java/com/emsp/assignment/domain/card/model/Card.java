@@ -1,15 +1,14 @@
 package com.emsp.assignment.domain.card.model;
 
 import com.emsp.assignment.domain.account.model.Account;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
-import org.hibernate.annotations.Generated;
-import org.hibernate.annotations.GenerationTime;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.UUID; // 新增导入
 
 @Entity
 @Table(name = "card")
@@ -19,8 +18,18 @@ public class Card {
     @Column(name = "rfid_uid ", updatable = false, length = 14)
     private String rfidUid;
 
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "account_email", referencedColumnName = "email", foreignKey = @ForeignKey(name = "fk_card_account"))
+//    @JsonIdentityReference(alwaysAsId = true)
+//    private Account account;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_email", referencedColumnName = "email", foreignKey = @ForeignKey(name = "fk_card_account"))
+    @JoinColumn(name = "account_email", referencedColumnName = "email")
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "email" // 使用邮箱作为唯一标识符
+    )
+    @JsonIdentityReference(alwaysAsId = true) // 关键：仅序列化ID（邮箱）
     private Account account;
 
     @Pattern(regexp = "^\\d{4}-\\d{4}-\\d{4}-\\d{4}$")

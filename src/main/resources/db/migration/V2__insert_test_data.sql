@@ -50,7 +50,7 @@ INSERT INTO card (rfid_uid, visible_number, account_email, status) VALUES
 -- 边界情况补充数据
 -- ======================
 -- 1. 新建账户无合同ID但有卡 (新UID序列)
-('0457E8A1C4E6G0', '0011-2233-4455-6677', 'created_single@emaid.com', 'CREATED'),
+('0457E8A1C4E6G0', '0011-2233-4455-6677', NULL, 'CREATED'),
 
 -- 2. 激活账户含不同状态卡（主卡激活+副卡停用）(同系列UID)
 ('0457E8A1B2C3D4', '3344-5566-7788-9900', 'active_multi@emaid.com', 'DEACTIVATED'),

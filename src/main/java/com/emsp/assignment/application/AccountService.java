@@ -7,7 +7,7 @@ import com.emsp.assignment.domain.account.service.CardAssignmentService;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
-import com.emsp.assignment.infrastructure.exception.CardNotFoundException;
+import com.emsp.assignment.infrastructure.exception.IllegalAccountOperationException;
 import com.emsp.assignment.infrastructure.persistence.AccountRepository;
 import com.emsp.assignment.infrastructure.persistence.CardRepository;
 import jakarta.transaction.Transactional;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ConcurrentModificationException;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class AccountService {
@@ -56,16 +55,21 @@ public class AccountService {
     }
 
     @Transactional
-    public void changeAccountStatus(String email, AccountStatus newStatus) {
+    public void changeAccountStatus(String email, AccountStatus newStatus, String contractId) {
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found: " + email));
 
         // 状态转换验证逻辑
-        validateStatusTransition(account.getStatus(), newStatus);
+        validateStatusTransition(account.getStatus(), newStatus, contractId);
 
 
         // 3. 执行账户状态更新
         try {
+            // 如果是从CREATED到ACTIVATED的转换
+            if (account.getStatus() == AccountStatus.CREATED && newStatus == AccountStatus.ACTIVATED) {
+                // 更新合同ID
+                account.setContractId(contractId);
+            }
             account.setStatus(newStatus);
             accountRepository.save(account); // 自动进行版本检查
         } catch (OptimisticLockingFailureException ex) {
@@ -95,9 +99,19 @@ public class AccountService {
         }
     }
 
-    private void validateStatusTransition(AccountStatus current, AccountStatus newStatus) {
+    private void validateStatusTransition(AccountStatus current, AccountStatus newStatus, String contractId) {
+
         if (current == newStatus) return; // 相同状态无需处理
         switch (current) {
+            case CREATED:
+                // 激活账户必须提供有效的合同ID
+                if (newStatus == AccountStatus.ACTIVATED) {
+                    if (contractId == null || !contractId.matches("^[A-Z]{2}[0-9A-Z]{3}[0-9A-Z]{9}$")) {
+                        throw new IllegalAccountOperationException("Valid contract ID required to activate account");
+                    }
+                }
+
+                break;
             case ACTIVATED:
                 // ACTIVATED只能转为DEACTIVATED
                 if (newStatus != AccountStatus.DEACTIVATED) {

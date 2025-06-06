@@ -2,6 +2,7 @@ package com.emsp.assignment.domain.account.model;
 
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -48,7 +49,12 @@ public class Account {
         this.lastUpdated = LocalDateTime.now();
     }
 
+    @JsonIgnoreProperties("account") // 关键解决无限嵌套
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonIdentityInfo(
+//            generator = ObjectIdGenerators.PropertyGenerator.class,
+//            property = "rfidUid"
+//    )
     private List<Card> cards = new ArrayList<>();
 
     // 领域行为：激活账户

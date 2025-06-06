@@ -12,6 +12,8 @@ spring:
         format_sql: true
         hbm2ddl:
           auto: validate
+        enable_lazy_load_no_trans: true
+        default_batch_fetch_size: 20
 
   flyway:
     enabled: true
