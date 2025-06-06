@@ -2,6 +2,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- account table
 CREATE TABLE account (
+    version BIGINT NOT NULL DEFAULT 0,
     email VARCHAR(255) PRIMARY KEY CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
     contract_id VARCHAR(14) NULL CHECK (
         contract_id IS NULL OR contract_id ~ '^[A-Z]{2}[0-9A-Z]{3}[0-9A-Z]{9}$'

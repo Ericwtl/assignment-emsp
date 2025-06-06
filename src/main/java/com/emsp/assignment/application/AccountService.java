@@ -2,14 +2,23 @@ package com.emsp.assignment.application;
 
 
 import com.emsp.assignment.domain.account.model.Account;
+import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.account.service.CardAssignmentService;
+import com.emsp.assignment.domain.card.model.Card;
+import com.emsp.assignment.domain.card.model.CardStatus;
+import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
+import com.emsp.assignment.infrastructure.exception.CardNotFoundException;
 import com.emsp.assignment.infrastructure.persistence.AccountRepository;
 import com.emsp.assignment.infrastructure.persistence.CardRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ConcurrentModificationException;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -44,5 +53,64 @@ public class AccountService {
             Pageable pageable) {
         // 使用JOIN FETCH避免N+1问题
         return accountRepository.findWithCardsByLastUpdatedBetween(start, end, pageable);
+    }
+
+    @Transactional
+    public void changeAccountStatus(String email, AccountStatus newStatus) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + email));
+
+        // 状态转换验证逻辑
+        validateStatusTransition(account.getStatus(), newStatus);
+
+
+        // 3. 执行账户状态更新
+        try {
+            account.setStatus(newStatus);
+            accountRepository.save(account); // 自动进行版本检查
+        } catch (OptimisticLockingFailureException ex) {
+            // 处理并发冲突
+            throw new ConcurrentModificationException("The account status has been updated by another operation, please try again.");
+        }
+
+        // 4. 账户状态与卡片状态联动处理
+        List<Card> cards = cardRepository.findByAccountEmail(email);
+        if (!cards.isEmpty()) {
+            // 4.1 激活账户时自动激活ASSIGNED卡
+            if (newStatus == AccountStatus.ACTIVATED) {
+                cards.stream()
+                        .filter(card -> card.getStatus() == CardStatus.ASSIGNED)
+                        .forEach(card -> {
+                            card.setStatus(CardStatus.ACTIVATED);
+                            cardRepository.save(card);
+                        });
+            }
+            // 4.2 停用账户时强制停用所有卡
+            else if (newStatus == AccountStatus.DEACTIVATED) {
+                cards.forEach(card -> {
+                    card.setStatus(CardStatus.DEACTIVATED);
+                    cardRepository.save(card);
+                });
+            }
+        }
+    }
+
+    private void validateStatusTransition(AccountStatus current, AccountStatus newStatus) {
+        if (current == newStatus) return; // 相同状态无需处理
+        switch (current) {
+            case ACTIVATED:
+                // ACTIVATED只能转为DEACTIVATED
+                if (newStatus != AccountStatus.DEACTIVATED) {
+                    throw new IllegalStateException("Active accounts can only be deactivated");
+                }
+                break;
+
+            case DEACTIVATED:
+                // DEACTIVATED可以重新激活
+                if (newStatus != AccountStatus.ACTIVATED) {
+                    throw new IllegalStateException("Deactivated accounts can only be reactivated");
+                }
+                break;
+        }
     }
 }

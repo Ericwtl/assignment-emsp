@@ -16,6 +16,10 @@ import java.util.List;
 @Data
 @Table(name = "account")
 public class Account {
+    @Version
+    @Column(columnDefinition = "INT NOT NULL DEFAULT 0")
+    private Long version = 0L;
+
     @Id
     @NotBlank
     @Column(name = "email", unique = true, nullable = false)

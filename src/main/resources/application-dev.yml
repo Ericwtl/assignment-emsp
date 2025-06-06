@@ -6,11 +6,13 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate.ddl-auto: validate  # 禁止 Hibernate 自动建表
-#    hibernate.ddl-auto: update  # 自动同步实体类与表结构
     show-sql: true              # 控制台打印 SQL
     properties:
       hibernate:
         format_sql: true
+        hbm2ddl:
+          auto: validate
+
   flyway:
     enabled: true
     locations: classpath:db/migration  # Flyway 脚本路径
