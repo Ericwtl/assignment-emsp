@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    time-zone: Asia/Shanghai
   datasource:
     url: jdbc:postgresql://localhost:5432/emsp_db  # 指向 Docker 容器
     username: emsp
