@@ -21,8 +21,8 @@ public class CardController {
     // 1.Create card.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Card createCard(@RequestBody CardRequest request) {
-        return cardStateService.createCard(request.getRfidUid(), request.getVisibleNumber());
+    public Card createCard(@RequestBody Card card) {
+        return cardStateService.createCard(card);
     }
 
     // Active card.

@@ -1,19 +1,19 @@
 version: '3.9'
 services:
-  app:
-    image: assignment-emsp
-    build: . # 使用当前目录的Dockerfile
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/emsp_db
-      SPRING_DATASOURCE_USERNAME: emsp
-      SPRING_DATASOURCE_PASSWORD: emsp123
-    ports:
-      - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy # 等待数据库就绪
-    networks:
-      - app-net
+#  app:
+#    image: assignment-emsp
+#    build: . # 使用当前目录的Dockerfile
+#    environment:
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/emsp_db
+#      SPRING_DATASOURCE_USERNAME: emsp
+#      SPRING_DATASOURCE_PASSWORD: emsp123
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      db:
+#        condition: service_healthy # 等待数据库就绪
+#    networks:
+#      - app-net
 
   db:  # 使用 PostgreSQL（与您配置一致）
     image: postgres:15-alpine

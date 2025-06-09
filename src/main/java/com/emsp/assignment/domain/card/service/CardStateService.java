@@ -6,9 +6,11 @@ import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
 import com.emsp.assignment.infrastructure.exception.CardNotFoundException;
 import com.emsp.assignment.infrastructure.exception.IllegalCardOperationException;
+import com.emsp.assignment.infrastructure.exception.ResponseStatusException;
 import com.emsp.assignment.infrastructure.persistence.AccountRepository;
 import com.emsp.assignment.infrastructure.persistence.CardRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -26,10 +28,42 @@ public class CardStateService {
     }
 
     @Transactional
-    public Card createCard(String rfidUid, String visibleNumber) {
-        Card card = new Card();
-        card.setRfidUid(rfidUid);
-        card.setVisibleNumber(visibleNumber);
+    public Card createCard(Card card) {
+        // 校验1: visibleNumber 是否已存在
+        if (cardRepository.existsByVisibleNumber(card.getVisibleNumber())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Card with this visible number already exists");
+        }
+
+        // 获取状态（处理默认值）
+        CardStatus status = card.getStatus() != null ? card.getStatus() : CardStatus.CREATED;
+        card.setStatus(status);
+
+        // 处理账户关联
+        Account account = card.getAccount();
+        String accountEmail = account != null ? account.getEmail() : null;
+
+        // 校验2: 当状态为 ACTIVATED 或 ASSIGNED 时，账户必须存在
+        if (status == CardStatus.ACTIVATED || status == CardStatus.ASSIGNED) {
+            if (accountEmail == null || accountEmail.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Account is required for ACTIVATED or ASSIGNED cards");
+            }
+
+            if (!accountRepository.existsById(accountEmail)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Account not found with email: " + accountEmail);
+            }
+        }
+
+        // 校验3: 当状态为 CREATED 且提供了账户时，验证账户存在
+        if (status == CardStatus.CREATED && accountEmail != null && !accountEmail.isBlank()) {
+            if (!accountRepository.existsById(accountEmail)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Account not found with email: " + accountEmail);
+            }
+        }
+
         return cardRepository.save(card);
     }
 

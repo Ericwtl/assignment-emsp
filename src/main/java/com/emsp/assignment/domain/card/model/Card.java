@@ -3,6 +3,7 @@ package com.emsp.assignment.domain.card.model;
 import com.emsp.assignment.domain.account.model.Account;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
@@ -17,11 +18,6 @@ public class Card {
     @Id
     @Column(name = "rfid_uid ", updatable = false, length = 14)
     private String rfidUid;
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "account_email", referencedColumnName = "email", foreignKey = @ForeignKey(name = "fk_card_account"))
-//    @JsonIdentityReference(alwaysAsId = true)
-//    private Account account;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_email", referencedColumnName = "email")
@@ -55,6 +51,17 @@ public class Card {
             throw new IllegalStateException("Card is already deactivated");
         }
         this.status = CardStatus.DEACTIVATED;
+    }
+
+    @JsonSetter("account")
+    public void setAccountFromEmail(String email) {
+        if (email != null && !email.isBlank()) {
+            Account acc = new Account();
+            acc.setEmail(email);
+            this.account = acc;
+        } else {
+            this.account = null;
+        }
     }
 
 }

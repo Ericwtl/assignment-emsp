@@ -10,6 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface CardRepository extends JpaRepository<Card, String> {
+    // 检查 visibleNumber 是否已存在
+    boolean existsByVisibleNumber(String visibleNumber);
 
     // 使用rfidUid作为主键
     Optional<Card> findByRfidUid(String rfidUid);
