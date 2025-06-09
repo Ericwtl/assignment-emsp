@@ -36,7 +36,7 @@ public class AccountController {
     }
 
     @PutMapping("/{email}/status")    // POST /api/accounts/test@example.com/status
-    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public void changeAccountStatus(
             @PathVariable String email,
             @RequestParam AccountStatus newStatus,

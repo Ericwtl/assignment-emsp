@@ -1,6 +1,7 @@
 package com.emsp.assignment.domain.card.service;
 
 import com.emsp.assignment.domain.account.model.Account;
+import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
@@ -42,12 +43,13 @@ public class CardStateService {
         // 处理账户关联
         Account account = card.getAccount();
         String accountEmail = account != null ? account.getEmail() : null;
+        AccountStatus accountStaus = account != null ? account.getStatus() : null;
 
         // 校验2: 当状态为 ACTIVATED 或 ASSIGNED 时，账户必须存在
         if (status == CardStatus.ACTIVATED || status == CardStatus.ASSIGNED) {
-            if (accountEmail == null || accountEmail.isBlank()) {
+            if (accountEmail == null || accountEmail.isBlank() || accountStaus != AccountStatus.ACTIVATED) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Account is required for ACTIVATED or ASSIGNED cards");
+                        "Account is required and must be activated for ACTIVATED or ASSIGNED cards");
             }
 
             if (!accountRepository.existsById(accountEmail)) {
@@ -94,11 +96,15 @@ public class CardStateService {
     public void assignCard(String rfidUid, String accountEmail) {
         Account account = accountRepository.findById(accountEmail)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountEmail));
+
         Card card = cardRepository.findByRfidUid(rfidUid)
                 .orElseThrow(() -> new CardNotFoundException(rfidUid));
 
         if (!CardStatus.CREATED.equals(card.getStatus())) {
             throw new IllegalCardOperationException("Only CREATED cards can be assigned");
+        }
+        if (!AccountStatus.ACTIVATED.equals(account.getStatus())) {
+            throw new IllegalCardOperationException("Only ACTIVATED account can be assigned");
         }
 
         card.setAccount(account);

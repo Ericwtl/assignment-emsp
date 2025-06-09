@@ -39,13 +39,6 @@ public class AccountService {
         return accountRepository.save(account);
     }
 
-    public Page<Account> getAccountsByUpdateTime(
-            LocalDateTime startTime,
-            LocalDateTime endTime,
-            Pageable pageable) {
-        return accountRepository.findByLastUpdatedBetween(startTime, endTime, pageable);
-    }
-
     public Page<Account> getAccountsWithCardsByLastUpdated(
             LocalDateTime start,
             LocalDateTime end,

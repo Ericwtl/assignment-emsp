@@ -1,5 +1,6 @@
 package com.emsp.assignment.interfaces.rest;
 
+import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.domain.card.service.CardStateService;
@@ -39,7 +40,8 @@ public class CardController {
         cardStateService.deactivateCard(rfidUid);
     }
 
-    @PostMapping("/{rfidUid}/assign")
+    @PutMapping("/{rfidUid}/assign")
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public void assignCardToAccount(
             @PathVariable String rfidUid,
             @RequestParam String accountEmail

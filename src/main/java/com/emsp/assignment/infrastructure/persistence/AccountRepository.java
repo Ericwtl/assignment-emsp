@@ -16,30 +16,6 @@ public interface AccountRepository extends JpaRepository<Account, String> {
 
     Optional<Account> findByEmail(String email);
 
-    // 按更新时间范围查询账户（分页）
-    @Query("SELECT a FROM Account a WHERE a.lastUpdated BETWEEN :start AND :end")
-    Page<Account> findByLastUpdatedBetween(
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
-            Pageable pageable
-    );
-    // 获取账户及其关联卡（避免N+1问题）
-//    @Query("SELECT DISTINCT a FROM Account a LEFT JOIN FETCH a.cards WHERE a.lastUpdated BETWEEN :start AND :end")
-//    Page<Account> findWithCardsByLastUpdatedBetween(
-//            @Param("start") LocalDateTime start,
-//            @Param("end") LocalDateTime end,
-//            Pageable pageable
-//    );
-
-//    @Query("SELECT a FROM Account a " +
-//            "WHERE a.lastUpdated BETWEEN :start AND :end")
-//    @EntityGraph(attributePaths = {"cards"}) // 使用@EntityGraph代替JOIN FETCH
-//    Page<Account> findWithCardsByLastUpdatedBetween(
-//            @Param("start") LocalDateTime start,
-//            @Param("end") LocalDateTime end,
-//            Pageable pageable
-//    );
-
     @Query("SELECT DISTINCT a FROM Account a " +
             "LEFT JOIN FETCH a.cards c " +
             "WHERE a.lastUpdated BETWEEN :start AND :end " +
@@ -50,6 +26,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
             Pageable pageable
     );
 
+    boolean existsByEmail(String email);
 
 
 
