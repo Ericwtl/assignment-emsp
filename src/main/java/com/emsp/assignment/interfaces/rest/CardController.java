@@ -49,33 +49,13 @@ public class CardController {
         cardStateService.assignCard(rfidUid, accountEmail);
     }
 
-    @PostMapping("/{rfidUid}/status")
+    @PutMapping("/{rfidUid}/status")    // POST /api/accounts/test@example.com/status
+    @ResponseStatus(HttpStatus.ACCEPTED)
     public void changeCardStatus(
             @PathVariable String rfidUid,
-            @RequestParam CardStatus newStatus
+            @RequestParam CardStatus newStatus,
+            @RequestParam String accountEmail
     ) {
-        cardStateService.changeCardStatus(rfidUid, newStatus);
+        cardStateService.changeCardStatus(rfidUid, newStatus, accountEmail);
     }
-
-    public static class CardRequest {
-        private String rfidUid;
-        private String visibleNumber;
-
-        public String getRfidUid() {
-            return rfidUid;
-        }
-
-        public void setRfidUid(String rfidUid) {
-            this.rfidUid = rfidUid;
-        }
-
-        public String getVisibleNumber() {
-            return visibleNumber;
-        }
-
-        public void setVisibleNumber(String visibleNumber) {
-            this.visibleNumber = visibleNumber;
-        }
-    }
-
 }

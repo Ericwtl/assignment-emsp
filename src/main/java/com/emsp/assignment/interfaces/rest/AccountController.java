@@ -53,4 +53,17 @@ public class AccountController {
 
         return accountService.getAccountsWithCardsByLastUpdated(start, end, pageable);
     }
+
+    @PostMapping("/{email}/activate") // POST /api/accounts/test@example.com/activate
+    @ResponseStatus(HttpStatus.OK)
+    public void activateAccount(@PathVariable String email) {
+        accountStateService.activateAccount(email);
+    }
+
+    //3.Deactivate account.
+    @PostMapping("/{email}/deactivate") // POST /api/accounts/test@example.com/deactivate
+    @ResponseStatus(HttpStatus.OK)
+    public void deactivateAccount(@PathVariable String email) {
+        accountStateService.deactivateAccount(email);
+    }
 }
