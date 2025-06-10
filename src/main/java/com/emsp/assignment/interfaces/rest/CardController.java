@@ -4,6 +4,7 @@ import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.domain.card.service.CardStateService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class CardController {
     // 1.Create card.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Card createCard(@RequestBody Card card) {
+    public Card createCard(@RequestBody @Valid Card card) {
         return cardStateService.createCard(card);
     }
 
@@ -44,7 +45,7 @@ public class CardController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void assignCardToAccount(
             @PathVariable String rfidUid,
-            @RequestParam String accountEmail
+            @RequestParam @Valid String accountEmail
     ) {
         cardStateService.assignCard(rfidUid, accountEmail);
     }
@@ -54,7 +55,7 @@ public class CardController {
     public void changeCardStatus(
             @PathVariable String rfidUid,
             @RequestParam CardStatus newStatus,
-            @RequestParam String accountEmail
+            @RequestParam @Valid String accountEmail
     ) {
         cardStateService.changeCardStatus(rfidUid, newStatus, accountEmail);
     }

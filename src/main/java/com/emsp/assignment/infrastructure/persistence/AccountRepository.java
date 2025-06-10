@@ -26,8 +26,4 @@ public interface AccountRepository extends JpaRepository<Account, String> {
             Pageable pageable
     );
 
-    boolean existsByEmail(String email);
-
-
-
 }

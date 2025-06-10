@@ -36,8 +36,15 @@ public class Card {
     @Column(name = "status", nullable = false)
     private CardStatus status = CardStatus.CREATED;
 
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    private Instant createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now(); // 添加默认值
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
 
     public void activate() {
         if (this.status != CardStatus.ASSIGNED) {

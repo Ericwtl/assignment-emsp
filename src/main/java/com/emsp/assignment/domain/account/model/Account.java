@@ -22,9 +22,9 @@ public class Account {
     private Long version = 0L;
 
     @Id
-    @NotBlank
+    @NotBlank(message = "Email is required")
     @Column(name = "email", unique = true, nullable = false)
-    @Email(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    @Email(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Invalid email format")
     private String email; // Primary key
 
     @Column(name = "contract_id", nullable = true)
@@ -51,10 +51,6 @@ public class Account {
 
     @JsonIgnoreProperties("account") // 关键解决无限嵌套
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JsonIdentityInfo(
-//            generator = ObjectIdGenerators.PropertyGenerator.class,
-//            property = "rfidUid"
-//    )
     private List<Card> cards = new ArrayList<>();
 
     // 领域行为：激活账户

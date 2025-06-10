@@ -5,9 +5,11 @@ import com.emsp.assignment.application.AccountService;
 import com.emsp.assignment.domain.account.model.Account;
 import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.account.service.AccountStateService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -30,16 +32,16 @@ public class AccountController {
     //1.Create account.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Account createAccount(@RequestBody Account account) {
-        //log.info("RECEIVED ACCOUNT: {}", account.getEmail()); // 添加此日志
-        return accountService.createAccount(account);
+    public Account createAccount(@Valid @RequestBody Account account) {
+        Account created = accountService.createAccount(account);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created).getBody();
     }
 
     @PutMapping("/{email}/status")    // POST /api/accounts/test@example.com/status
     @ResponseStatus(HttpStatus.ACCEPTED)
     public void changeAccountStatus(
-            @PathVariable String email,
-            @RequestParam AccountStatus newStatus,
+            @PathVariable @Valid String email,
+            @RequestParam @Valid AccountStatus newStatus,
             @RequestParam(required = false) String contractId
     ) {
         accountService.changeAccountStatus(email, newStatus, contractId);

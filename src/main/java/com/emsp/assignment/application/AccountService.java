@@ -7,6 +7,8 @@ import com.emsp.assignment.domain.account.service.CardAssignmentService;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
+import com.emsp.assignment.infrastructure.exception.BusinessResponseException;
+import com.emsp.assignment.infrastructure.exception.ConcurrentModificationException;
 import com.emsp.assignment.infrastructure.exception.IllegalAccountOperationException;
 import com.emsp.assignment.infrastructure.persistence.AccountRepository;
 import com.emsp.assignment.infrastructure.persistence.CardRepository;
@@ -14,10 +16,10 @@ import jakarta.transaction.Transactional;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ConcurrentModificationException;
 import java.util.List;
 
 @Service
@@ -94,7 +96,11 @@ public class AccountService {
 
     private void validateStatusTransition(AccountStatus current, AccountStatus newStatus, String contractId) {
 
-        if (current == newStatus) return; // 相同状态无需处理
+        if (current == newStatus) {
+            throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
+                    "Account is already in " + newStatus + " status");
+        }
+
         switch (current) {
             case CREATED:
                 // 激活账户必须提供有效的合同ID

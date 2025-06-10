@@ -12,10 +12,8 @@ import java.util.Optional;
 public interface CardRepository extends JpaRepository<Card, String> {
 
     boolean existsByVisibleNumber(String visibleNumber);
-    boolean existsByRfidUid(String rfidUid);
 
     // 使用rfidUid作为主键
     Optional<Card> findByRfidUid(String rfidUid);
     List<Card> findByAccountEmail(String accountEmail);
-    List<Card> findByStatus(CardStatus status);
 }

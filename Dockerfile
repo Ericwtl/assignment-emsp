@@ -10,5 +10,3 @@ COPY target/assignment-0.0.1-SNAPSHOT.jar app.jar
 EXPOSE 8080
 # 启动应用
 ENTRYPOINT ["java", "-jar", "app.jar"]
-# 示例脚本
-#ENTRYPOINT ["./wait-for-it.sh", "db:5432", "--", "java", "-jar", "app.jar"]

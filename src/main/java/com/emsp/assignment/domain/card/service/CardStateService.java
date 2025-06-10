@@ -5,9 +5,10 @@ import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
+import com.emsp.assignment.infrastructure.exception.BusinessResponseException;
 import com.emsp.assignment.infrastructure.exception.CardNotFoundException;
 import com.emsp.assignment.infrastructure.exception.IllegalCardOperationException;
-import com.emsp.assignment.infrastructure.exception.ResponseStatusException;
+import com.emsp.assignment.infrastructure.exception.BusinessResponseException;
 import com.emsp.assignment.infrastructure.persistence.AccountRepository;
 import com.emsp.assignment.infrastructure.persistence.CardRepository;
 import jakarta.transaction.Transactional;
@@ -32,7 +33,7 @@ public class CardStateService {
     public Card createCard(Card card) {
         // 校验1: visibleNumber 是否已存在
         if (cardRepository.existsByVisibleNumber(card.getVisibleNumber())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
                     "Card with this visible number already exists");
         }
 
@@ -48,12 +49,12 @@ public class CardStateService {
         // 校验2: 当状态为 ACTIVATED 或 ASSIGNED 时，账户必须存在
         if (status == CardStatus.ACTIVATED || status == CardStatus.ASSIGNED) {
             if (accountEmail == null || accountEmail.isBlank() || accountStaus != AccountStatus.ACTIVATED) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
                         "Account is required and must be activated for ACTIVATED or ASSIGNED cards");
             }
 
             if (!accountRepository.existsById(accountEmail)) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                throw new BusinessResponseException(HttpStatus.NOT_FOUND,
                         "Account not found with email: " + accountEmail);
             }
         }
@@ -61,7 +62,7 @@ public class CardStateService {
         // 校验3: 当状态为 CREATED 且提供了账户时，验证账户存在
         if (status == CardStatus.CREATED && accountEmail != null && !accountEmail.isBlank()) {
             if (!accountRepository.existsById(accountEmail)) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                throw new BusinessResponseException(HttpStatus.NOT_FOUND,
                         "Account not found with email: " + accountEmail);
             }
         }
@@ -115,11 +116,11 @@ public class CardStateService {
     @Transactional
     public Card changeCardStatus(String rfidUid, CardStatus newStatus, String accountEmail) {
         Card card = cardRepository.findById(rfidUid)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Card not found"));
+                .orElseThrow(() -> new BusinessResponseException(HttpStatus.NOT_FOUND, "Card not found"));
 
         // 1. 新旧状态相同
         if (card.getStatus() == newStatus) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
                     "Card is already in " + newStatus + " status");
         }
 
@@ -145,7 +146,7 @@ public class CardStateService {
         // 实际项目中应使用Spring Security进行权限验证
         if(accountEmail != null && !accountEmail.isBlank()){
             if (card.getAccount() != null && !accountEmail.equals(card.getAccount().getEmail())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                throw new BusinessResponseException(HttpStatus.FORBIDDEN,
                         "You cannot assign a card to others that have already been assigned to:" + card.getAccount().getEmail());
             }
         }
@@ -161,19 +162,19 @@ public class CardStateService {
     private Card handleToAssigned(Card card, String accountEmail) {
         Account account;
         if(accountEmail == null || accountEmail.isBlank()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
                     "Account email is required for ASSIGNED status, please provide the account email");
         }
         if (card.getAccount() == null) {
             account = accountRepository.findById(accountEmail)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found:" + accountEmail));
+                    .orElseThrow(() -> new BusinessResponseException(HttpStatus.NOT_FOUND, "Account not found:" + accountEmail));
         }else{
             account = accountRepository.findById(card.getAccount().getEmail())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found:" + accountEmail));
+                    .orElseThrow(() -> new BusinessResponseException(HttpStatus.NOT_FOUND, "Account not found:" + accountEmail));
         }
 
         if (account.getStatus() == AccountStatus.DEACTIVATED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
                     "Account must be CREATED OR ACTIVATED for ASSIGNED status: " + accountEmail + " is in DEACTIVATED STATUS");
         }
 
@@ -188,19 +189,19 @@ public class CardStateService {
         // 必须有账户关联
         if (card.getAccount() == null) {
             if(accountEmail == null || accountEmail.isBlank()){
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
                         "Account email is required for ACTIVATED status, please provide the account email");
             }else{
                 account = accountRepository.findById(accountEmail)
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found:" + accountEmail));
+                        .orElseThrow(() -> new BusinessResponseException(HttpStatus.NOT_FOUND, "Account not found:" + accountEmail));
             }
         }else{
             account = accountRepository.findById(card.getAccount().getEmail())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+            .orElseThrow(() -> new BusinessResponseException(HttpStatus.NOT_FOUND, "Account not found"));
         }
 
         if (account.getStatus() != AccountStatus.ACTIVATED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
                     "Account must be ACTIVATED for ACTIVATED status");
         }
 
