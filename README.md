@@ -6,18 +6,18 @@
 模块	能力描述
 ​账户管理​	✅ 多状态账户控制（ACTIVE/INACTIVE）
 ✅ 1:N账户-卡片关联体系
-​卡片管理​	✅ UUID主键支持（PostgreSQL原生集成）
-✅ 三态流转（ACTIVE→BLOCKED→EXPIRED）
+​卡片管理​	✅ 主键支持（PostgreSQL原生集成）
+✅ 三态流转（CREATED→ASSIGNED→ACTIVATED→DEACTIVATED）
 ​数据安全​	✅ JPA实体关系自动校验
 ✅ Hibernate Schema验证（DDL-auto: validate）
 
 
 🔧 技术栈
 ​后端框架​
-Spring Boot 3.5 + Spring Data JPA + Validation
+Spring Boot  + Spring Data JPA + Validation
 
 ​数据库​
-PostgreSQL 15（UUID扩展支持）
+PostgreSQL 15
 
 🚀 快速启动
 
