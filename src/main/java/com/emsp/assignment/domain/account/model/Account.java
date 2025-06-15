@@ -2,6 +2,7 @@ package com.emsp.assignment.domain.account.model;
 
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -16,17 +17,22 @@ import java.util.List;
 @Data
 @Table(name = "account")
 public class Account {
+    @Version
+    @Column(columnDefinition = "INT NOT NULL DEFAULT 0")
+    private Long version = 0L;
+
     @Id
-    @NotBlank
+    @NotBlank(message = "Email is required")
     @Column(name = "email", unique = true, nullable = false)
-    @Email(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+    @Email(regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", message = "Invalid email format")
     private String email; // Primary key
 
-    @Column(name = "contract_id", nullable = false)
-    @Pattern(regexp = "^[A-Z]{2}[0-9A-Z]{3}[0-9A-Z]{9}$")
+    @Column(name = "contract_id", nullable = true)
+    @Pattern(regexp = "^(|([A-Z]{2}[0-9A-Z]{3}[0-9A-Z]{9}))$",
+            message = "Contract ID must comply with the EMAID standard or be empty.")
     private String contractId; // EMAID
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = true)
     @Enumerated(EnumType.STRING)
     private AccountStatus status = AccountStatus.CREATED;
 
@@ -43,6 +49,7 @@ public class Account {
         this.lastUpdated = LocalDateTime.now();
     }
 
+    @JsonIgnoreProperties("account") // 关键解决无限嵌套
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Card> cards = new ArrayList<>();
 

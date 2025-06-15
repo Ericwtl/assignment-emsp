@@ -1,15 +1,19 @@
-package com.emsp.assignment.interfaces.rest.account;
+package com.emsp.assignment.interfaces.rest;
 
 
-import com.emsp.assignment.application.account.AccountService;
+import com.emsp.assignment.application.AccountService;
 import com.emsp.assignment.domain.account.model.Account;
+import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.account.service.AccountStateService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+
 import org.springframework.data.domain.Pageable;
 
 @RestController
@@ -25,10 +29,31 @@ public class AccountController {
         this.accountStateService = accountStateService;
     }
 
+    //1.Create account.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Account createAccount(@RequestBody Account account) {
-        return accountService.createAccount(account);
+    public Account createAccount(@Valid @RequestBody Account account) {
+        Account created = accountService.createAccount(account);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created).getBody();
+    }
+
+    @PutMapping("/{email}/status")    // POST /api/accounts/test@example.com/status
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public void changeAccountStatus(
+            @PathVariable @Valid String email,
+            @RequestParam @Valid AccountStatus newStatus,
+            @RequestParam(required = false) String contractId
+    ) {
+        accountService.changeAccountStatus(email, newStatus, contractId);
+    }
+
+    @GetMapping
+    public Page<Account> getAccountsByUpdateTime(
+            @RequestParam("start") LocalDateTime start,
+            @RequestParam("end") LocalDateTime end,
+            @PageableDefault(size = 20, sort = "lastUpdated") Pageable pageable) {
+
+        return accountService.getAccountsWithCardsByLastUpdated(start, end, pageable);
     }
 
     @PostMapping("/{email}/activate") // POST /api/accounts/test@example.com/activate
@@ -37,18 +62,10 @@ public class AccountController {
         accountStateService.activateAccount(email);
     }
 
+    //3.Deactivate account.
     @PostMapping("/{email}/deactivate") // POST /api/accounts/test@example.com/deactivate
     @ResponseStatus(HttpStatus.OK)
     public void deactivateAccount(@PathVariable String email) {
         accountStateService.deactivateAccount(email);
-    }
-
-    @GetMapping  // GET /api/accounts?start=2023-01-01T00:00:00&end=2023-12-31T23:59:59&page=0&size=20
-    public Page<Account> getAccountsByUpdateTime(
-            @RequestParam("start") LocalDateTime start,
-            @RequestParam("end") LocalDateTime end,
-            @PageableDefault(size = 20) Pageable pageable) {
-
-        return accountService.getAccountsByUpdateTime(start, end, pageable);
     }
 }

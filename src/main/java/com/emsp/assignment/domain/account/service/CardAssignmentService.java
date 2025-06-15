@@ -2,8 +2,11 @@ package com.emsp.assignment.domain.account.service;
 
 import com.emsp.assignment.domain.account.model.Account;
 import com.emsp.assignment.domain.card.model.Card;
+import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
-import com.emsp.assignment.infrastructure.persistence.account.AccountRepository;
+import com.emsp.assignment.infrastructure.exception.CardNotFoundException;
+import com.emsp.assignment.infrastructure.persistence.AccountRepository;
+import com.emsp.assignment.infrastructure.persistence.CardRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -13,21 +16,12 @@ import java.util.UUID;
 public class CardAssignmentService {
 
     private final AccountRepository accountRepository;
+    private final CardRepository cardRepository;
 
-    public CardAssignmentService(AccountRepository accountRepository) {
+    public CardAssignmentService(AccountRepository accountRepository,
+                                 CardRepository cardRepository) {
         this.accountRepository = accountRepository;
+        this.cardRepository = cardRepository;
     }
 
-    @Transactional
-    public void assignCardToAccount(UUID cardId, String accountEmail) {
-        Account account = accountRepository.findById(accountEmail)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountEmail));
-
-        // 实际应通过CardRepository获取卡片
-        Card card = new Card();
-        card.setUid(cardId);
-
-        account.addCard(card);
-        accountRepository.save(account);
-    }
 }

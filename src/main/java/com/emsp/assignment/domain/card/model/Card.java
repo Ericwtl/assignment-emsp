@@ -1,46 +1,50 @@
 package com.emsp.assignment.domain.card.model;
 
 import com.emsp.assignment.domain.account.model.Account;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
-import org.hibernate.annotations.Generated;
-import org.hibernate.annotations.GenerationTime;
 
-import java.time.LocalDateTime;
-import java.util.UUID; // 新增导入
+import java.time.Instant;
 
 @Entity
 @Table(name = "card")
 @Data
 public class Card {
     @Id
-    @GeneratedValue
-    @Column(name = "uid", columnDefinition = "uuid", updatable = false)
-    private UUID uid;
+    @Column(name = "rfid_uid ", updatable = false, length = 14)
+    private String rfidUid;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_email", referencedColumnName = "email", foreignKey = @ForeignKey(name = "fk_card_account"))
+    @JoinColumn(name = "account_email", referencedColumnName = "email")
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "email" // 使用邮箱作为唯一标识符
+    )
+    @JsonIdentityReference(alwaysAsId = true) // 关键：仅序列化ID（邮箱）
     private Account account;
 
-    @Lob
-    @Column(name = "encrypted_card", nullable = false, columnDefinition = "BYTEA")
-    private byte[] encryptedCard;
-
-    @Column(name = "last_four_digits", nullable = false, length = 4)
-    private String lastFourDigits;
-
-    @Generated(GenerationTime.ALWAYS)
     @Pattern(regexp = "^\\d{4}-\\d{4}-\\d{4}-\\d{4}$")
-    @Column(name = "visible_number", insertable = false, updatable = false)
+    @Column(name = "visible_number", updatable = false, nullable = false, length = 19)
     private String visibleNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private CardStatus status = CardStatus.CREATED;
 
-    @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now(); // 添加默认值
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
 
     public void activate() {
         if (this.status != CardStatus.ASSIGNED) {
@@ -54,6 +58,17 @@ public class Card {
             throw new IllegalStateException("Card is already deactivated");
         }
         this.status = CardStatus.DEACTIVATED;
+    }
+
+    @JsonSetter("account")
+    public void setAccountFromEmail(String email) {
+        if (email != null && !email.isBlank()) {
+            Account acc = new Account();
+            acc.setEmail(email);
+            this.account = acc;
+        } else {
+            this.account = null;
+        }
     }
 
 }
