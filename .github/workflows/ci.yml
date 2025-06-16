@@ -131,22 +131,55 @@ jobs:
 #          ls -la target
 #          test -f target/app.jar || exit 1
 
-      # === Docker 构建阶段优化 ===
-      - name: Build Docker image
-        if: success()  # 只有所有步骤成功才构建
-#        working-directory: ./docker-context
+      - name: Start PostgreSQL for migrations
         run: |
-          echo "Building Docker image..."
+#          docker network create app-net
+          docker run -d --name ci-db \
+#            --network app-net \
+            -e POSTGRES_DB=emsp_db \
+            -e POSTGRES_USER=emsp \
+            -e POSTGRES_PASSWORD=emsp123 \
+            -p 5432:5432 \
+            postgres:15-alpine
+          
+          # 增强等待逻辑（重试机制）
+          for i in {1..10}; do
+            if docker run --rm --network container:ci-db \
+              postgres:15-alpine pg_isready -U emsp -h localhost; then
+              echo "Database ready after $i attempts"
+              break
+            else
+              echo "Database not ready, retrying ($i/10)..."
+              sleep 3
+            fi
+          done
+
+      # Docker 构建和迁移执行
+      - name: Build and run with migrations
+        run: |
           docker build -t myapp:${{ github.sha }} .
           
-          docker run --rm myapp:${{ github.sha }} --version
+          docker run --rm \
+            --name ci-app \
+            --network container:ci-db \
+            -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/emsp_db \
+            -e SPRING_DATASOURCE_USERNAME=emsp \
+            -e SPRING_DATASOURCE_PASSWORD=emsp123 \
+            myapp:${{ github.sha }}
+          
+          docker exec ci-db psql -U emsp -d emsp_db -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
 
+      # 清理临时数据库
+      - name: Cleanup temporary DB
+        if: always()
+        run: docker rm -f ci-db
+
+      # === Docker 构建阶段优化 ===
+      - name: Save Docker image
         # 添加构建上下文信息
+        if: success()  # 在构建成功后保存
         env:
           DOCKER_BUILDKIT: 1  # 激活BuildKit
-
-      - name: Save Docker image
-        if: success()  # 在构建成功后保存
         run: |
           docker save myapp:${{ github.sha }} -o image.tar
           ls -lh image.tar
