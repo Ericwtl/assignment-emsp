@@ -79,13 +79,13 @@ jobs:
           fi
 
       # === Docker构建准备 ===
-      - name: Prepare Docker context
-        run: |
-          # 创建专门用于Docker的目录
-          mkdir -p docker-context
-          cp target/app.jar docker-context/
-          echo "Docker context contents:"
-          ls -l docker-context
+#      - name: Prepare Docker context
+#        run: |
+#          # 创建专门用于Docker的目录
+#          mkdir -p docker-context
+#          cp target/app.jar docker-context/
+#          echo "Docker context contents:"
+#          ls -l docker-context
 
       # 添加测试报告
       - name: Publish Test Report
@@ -134,7 +134,7 @@ jobs:
       # === Docker 构建阶段优化 ===
       - name: Build Docker image
         if: success()  # 只有所有步骤成功才构建
-        working-directory: ./docker-context
+#        working-directory: ./docker-context
         run: |
           echo "Building Docker image..."
           docker build -t myapp:${{ github.sha }} .
