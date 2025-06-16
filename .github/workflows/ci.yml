@@ -56,17 +56,26 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # 添加在测试通过后
+      # Docker 构建（添加依赖检测，确保镜像存在）
       - name: Build Docker image
+        id: docker-build
         run: |
-          docker build -t myapp:${{ github.sha }} .
+          if [ ${{ job.status }} == 'success' ]; then
+            docker build -t myapp:${{ github.sha }} .
+          else
+            echo "test failed,skip the docker build."
+            exit 1
+          fi
 
       - name: Save Docker image
+        if: steps.docker-build.outcome == 'success'
         run: docker save myapp:${{ github.sha }} -o image.tar
-        if: ${{ success() }} # 仅测试通过时构建
 
       - name: Upload Docker image
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: image.tar
+
+
+
