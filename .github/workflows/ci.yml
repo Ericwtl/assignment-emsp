@@ -101,9 +101,9 @@ jobs:
 
       - name: Start PostgreSQL for migrations
         run: |
-#          docker network create app-net
+          docker network create app-net
           docker run -d --name ci-db \
-#            --network app-net \
+            --network app-net \
             -e POSTGRES_DB=emsp_db \
             -e POSTGRES_USER=emsp \
             -e POSTGRES_PASSWORD=emsp123 \
