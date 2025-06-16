@@ -35,6 +35,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      # 确保JAR生成
+      - name: Build project
+        run: mvn clean package -DfinalName=app
+
+      # 验证JAR存在
+      - name: Verify JAR file
+        run: |
+          echo "Generated JAR files:"
+          ls -l target/*.jar
+          [ -f target/app.jar ] || (echo "JAR not found!"; exit 1)
+
+      # 显示JAR文件路径信息
+      - name: Debug JAR location
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "JAR file path: $(realpath target/app.jar)"
+          du -sh target/app.jar
+
       # 编译和单元测试 - 使用package而非install
       - name: Build and test
         run: mvn clean verify  # 这是最佳选择，后面有解释
@@ -63,7 +81,7 @@ jobs:
         run: |
             echo "Coverage report location:"
             ls -la target/site/jacoco/
-            
+
 #            # 如果使用 SonarQube/JaCoCo
 #            echo "SonarQube 使用的覆盖率文件:"
 #            ls -la target/jacoco.exec
@@ -73,6 +91,13 @@ jobs:
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # 添加验证步骤，确保 JAR 文件存在
+      - name: Verify JAR exists
+        run: |
+          echo "Listing target directory:"
+          ls -la target
+          test -f target/app.jar || exit 1
 
       # Docker 构建（添加依赖检测，确保镜像存在）
       - name: Build Docker image
