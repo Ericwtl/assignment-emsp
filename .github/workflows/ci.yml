@@ -35,29 +35,46 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # 确保JAR生成
-      - name: Build project
-        run: mvn clean package -DfinalName=app
-
-      # 验证JAR存在
-      - name: Verify JAR file
-        run: |
-          echo "Generated JAR files:"
-          ls -l target/*.jar
-          [ -f target/assignment-0.0.1-SNAPSHOT.jar ] || (echo "JAR not found!"; exit 1)
-
-      # 显示JAR文件路径信息
-      - name: Debug JAR location
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "JAR file path: $(realpath target/app.jar)"
-          du -sh target/app.jar
-
-      # 编译和单元测试 - 使用package而非install
+      # 编译和单元测试
       - name: Build and test
         run: mvn clean verify  # 这是最佳选择，后面有解释
         # 如果想在测试失败时看到详细日志:
         # run: mvn -B clean verify --no-transf
+
+      # === 单一构建步骤代替重复构建 ===
+      - name: Build, test and package
+        run: |
+          mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify package -DfinalName=app
+
+        # 添加性能优化参数
+        env:
+          MAVEN_OPTS: >
+            -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+            -Dmaven.artifact.threads=10
+
+      # === JAR 文件验证合并 ===
+      - name: Verify build artifacts
+        run: |
+          echo "Build artifacts:"
+          ls -la target
+          
+          if [ ! -f target/app.jar ]; then
+            echo "::error::Main JAR file not found!"
+            exit 1
+          fi
+          
+          if [ -z "$(ls -A target/surefire-reports/*.xml 2>/dev/null)" ]; then
+            echo "::warning::No test reports found"
+          else
+            echo "Test reports found"
+          fi
+          
+          # 验证覆盖率报告
+          if [ ! -d target/site/jacoco ]; then
+            echo "::error::Coverage report not generated!"
+            exit 1
+          fi
+
 
       # 添加测试报告
       - name: Publish Test Report
@@ -67,20 +84,24 @@ jobs:
           name: Maven Test Results
           path: target/surefire-reports/*.xml
           reporter: java-junit
+          fail-on-error: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       # 确保先运行测试 (JaCoCo 依赖测试结果)
-      - name: Run tests with coverage
-        run: mvn clean test
+#      - name: Run tests with coverage
+#        run: mvn clean test
 
         # 代码覆盖率报告
-      - name: Generate Coverage Report
-        run: |
-          mvn org.jacoco:jacoco-maven-plugin:report
-
-      - name: Verify Coverage Report
-        run: |
-            echo "Coverage report location:"
-            ls -la target/site/jacoco/
+#      - name: Generate Coverage Report
+#        run: |
+#          mvn org.jacoco:jacoco-maven-plugin:report
+#
+#      - name: Verify Coverage Report
+#        run: |
+#            echo "Coverage report location:"
+#            ls -la target/site/jacoco/
 
 #            # 如果使用 SonarQube/JaCoCo
 #            echo "SonarQube 使用的覆盖率文件:"
@@ -93,29 +114,35 @@ jobs:
 #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # 添加验证步骤，确保 JAR 文件存在
-      - name: Verify JAR exists
-        run: |
-          echo "Listing target directory:"
-          ls -la target
-          test -f target/app.jar || exit 1
+#      - name: Verify JAR exists
+#        run: |
+#          echo "Listing target directory:"
+#          ls -la target
+#          test -f target/app.jar || exit 1
 
-      # Docker 构建（添加依赖检测，确保镜像存在）
+      # === Docker 构建阶段优化 ===
       - name: Build Docker image
-        id: docker-build
+        if: success()  # 只有所有步骤成功才构建
         run: |
-          if [ ${{ job.status }} == 'success' ]; then
-            docker build -t myapp:${{ github.sha }} .
-          else
-            echo "test failed,skip the docker build."
-            exit 1
-          fi
+          echo "Building Docker image..."
+          docker build -t myapp:${{ github.sha }} .
+          
+          docker run --rm myapp:${{ github.sha }} --version
+
+        # 添加构建上下文信息
+        env:
+          DOCKER_BUILDKIT: 1  # 激活BuildKit
 
       - name: Save Docker image
-        if: steps.docker-build.outcome == 'success'
-        run: docker save myapp:${{ github.sha }} -o image.tar
+        if: success()  # 在构建成功后保存
+        run: |
+          docker save myapp:${{ github.sha }} -o image.tar
+          ls -lh image.tar
 
-      - name: Upload Docker image
+      - name: Upload Docker artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: image.tar
+          retention-days: 1  # 减少存储占用
