@@ -25,28 +25,29 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
+          server-id: github
+          settings-path: ${{ github.workspace }}
 
       # 缓存Maven依赖，加速构建
       - name: Cache Maven dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.m2/repository
+          path: |
+            ~/.m2/repository
+            target
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # 编译和单元测试
-      - name: Build and test
-        run: mvn clean verify  # 这是最佳选择，后面有解释
-        # 如果想在测试失败时看到详细日志:
-        # run: mvn -B clean verify --no-transf
-
-      # === 单一构建步骤代替重复构建 ===
+      # === 修复JAR文件名问题 ===
       - name: Build, test and package
+        id: build-package
         run: |
-          mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify package -DfinalName=app
-
-        # 添加性能优化参数
+          mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent verify package
+          
+          JAR_FILE=$(find target -name "*.jar" -not -name "*.original" -print -quit)
+          echo "JAR_FILE=${JAR_FILE}" >> $GITHUB_ENV
+          echo "Generated JAR: ${JAR_FILE}"
         env:
           MAVEN_OPTS: >
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
@@ -58,10 +59,13 @@ jobs:
           echo "Build artifacts:"
           ls -la target
           
-          if [ ! -f target/app.jar ]; then
-            echo "::error::Main JAR file not found!"
+          if [ ! -f "${{ env.JAR_FILE }}" ]; then
+            echo "::error::Main JAR file not found at ${{ env.JAR_FILE }}!"
             exit 1
           fi
+          
+          cp "${{ env.JAR_FILE }}" target/app.jar
+          echo "Copied ${{ env.JAR_FILE }} to target/app.jar"
           
           if [ -z "$(ls -A target/surefire-reports/*.xml 2>/dev/null)" ]; then
             echo "::warning::No test reports found"
@@ -69,12 +73,19 @@ jobs:
             echo "Test reports found"
           fi
           
-          # 验证覆盖率报告
           if [ ! -d target/site/jacoco ]; then
             echo "::error::Coverage report not generated!"
             exit 1
           fi
 
+      # === Docker构建准备 ===
+      - name: Prepare Docker context
+        run: |
+          # 创建专门用于Docker的目录
+          mkdir -p docker-context
+          cp target/app.jar docker-context/
+          echo "Docker context contents:"
+          ls -l docker-context
 
       # 添加测试报告
       - name: Publish Test Report
@@ -123,6 +134,7 @@ jobs:
       # === Docker 构建阶段优化 ===
       - name: Build Docker image
         if: success()  # 只有所有步骤成功才构建
+        working-directory: ./docker-context
         run: |
           echo "Building Docker image..."
           docker build -t myapp:${{ github.sha }} .
