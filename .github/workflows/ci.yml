@@ -36,6 +36,18 @@ jobs:
         # 如果想在测试失败时看到详细日志:
         # run: mvn -B clean verify --no-transf
 
+      # 添加测试报告
+      - name: Publish Test Report
+        uses: dorny/test-reporter@v1
+        if: always() # 即使测试失败也生成报告
+        with:
+          name: Maven Test Results
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
+
+        # 代码覆盖率报告
+      - name: Generate Coverage Report
+        run: mvn jacoco:report
 
       # 代码质量检查示例
 #      - name: Run SonarCloud
@@ -44,15 +56,17 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # Docker镜像构建
-#      - name: Build Docker image
-#        run: |
-#          docker build -t myapp:${{ github.sha }} .
+      # 添加在测试通过后
+      - name: Build Docker image
+        run: |
+          docker build -t myapp:${{ github.sha }} .
 
-      # 存储镜像用于后续部署
-#      - name: Save Docker image
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: docker-image
-#          path: |
-#            saved-image.tar
+      - name: Save Docker image
+        run: docker save myapp:${{ github.sha }} -o image.tar
+        if: ${{ success() }} # 仅测试通过时构建
+
+      - name: Upload Docker image
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: image.tar
