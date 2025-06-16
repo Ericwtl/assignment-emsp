@@ -50,10 +50,23 @@ jobs:
           path: target/surefire-reports/*.xml
           reporter: java-junit
 
+      # 确保先运行测试 (JaCoCo 依赖测试结果)
+      - name: Run tests with coverage
+        run: mvn clean test
+
         # 代码覆盖率报告
       - name: Generate Coverage Report
-        run: mvn jacoco:report
+        run: |
+          mvn org.jacoco:jacoco-maven-plugin:report
 
+      - name: Verify Coverage Report
+        run: |
+            echo "Coverage report location:"
+            ls -la target/site/jacoco/
+            
+#            # 如果使用 SonarQube/JaCoCo
+#            echo "SonarQube 使用的覆盖率文件:"
+#            ls -la target/jacoco.exec
       # 代码质量检查示例
 #      - name: Run SonarCloud
 #        uses: sonarsource/sonarcloud-github-action@master
