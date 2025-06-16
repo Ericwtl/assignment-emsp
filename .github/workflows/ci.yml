@@ -127,13 +127,23 @@ jobs:
         run: |
           docker build -t myapp:${{ github.sha }} .
           
-          docker run --rm \
+          docker run -d --rm \
             --name ci-app \
             --network container:ci-db \
+            --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
+            --health-interval=1s \
+            --health-timeout=3s \
+            --health-retries=10 \
+            -e SPRING_PROFILES_ACTIVE=ci \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/emsp_db \
             -e SPRING_DATASOURCE_USERNAME=emsp \
             -e SPRING_DATASOURCE_PASSWORD=emsp123 \
-            myapp:${{ github.sha }}
+            myapp:${{ github.sha }} &
+          echo "等待应用启动完成..."
+          docker inspect --format='{{.State.Health.Status}}' ci-app | grep "healthy" || true
+          sleep 3
+          echo "停止应用容器..."
+          docker stop ci-app
           
           docker exec ci-db psql -U emsp -d emsp_db -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
 
