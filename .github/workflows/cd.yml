@@ -48,7 +48,7 @@ jobs:
             --instance-id i-0a4edfafee7b5376c \
             --availability-zone ap-northeast-1c \
             --instance-os-user ubuntu \
-            --ssh-public-key "${{ secrets.SSH_PRIVATE_KEY }}"
+            --ssh-public-key "${{ secrets.SSH_PUBLIC_KEY }}"
 
       # 获取ECR仓库URI
       - name: Get ECR repository URI
