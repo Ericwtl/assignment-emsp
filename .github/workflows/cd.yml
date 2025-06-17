@@ -16,6 +16,28 @@ jobs:
     runs-on: ubuntu-latest
     # 配置AWS凭证（使用Secret中存储的IAM访问密钥）
     steps:
+      - name: Download completion marker
+        uses: actions/download-artifact@v4
+        with:
+          name: upload-status
+          run-id: ${{ github.event.workflow_run.id }}
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: .status-files
+
+      - name: Wait for upload completion
+        run: |
+          while [ ! -f ".status-files/.upload-completed" ]; do
+            echo "Upload not completed yet. Waiting 15 seconds..."
+            sleep 15
+          done
+          echo "✅ Docker image upload confirmed completed"
+
+      - name: Verify upload timestamp
+        run: |
+          cat .status-files/upload-status.txt
+          echo "等待结束于 $(date)"
+
       # 下载CI构建的镜像
       - name: Download Docker image
         uses: actions/download-artifact@v4
