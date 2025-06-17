@@ -105,38 +105,21 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} "echo 'SSH connection successful!'"
 
-      # 1. 配置AWS凭证 (使用OIDC)
-#      - name: Configure AWS credentials
-#        uses: aws-actions/configure-aws-credentials@v2
-#        with:
-#          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
-#          aws-region: ap-northeast-1
-
-      # 2. 生成临时凭证脚本
-      - name: Generate AWS session script
-        run: |
-          cat << 'EOF' > ec2_aws_env.sh
-          #!/bin/bash
-          export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-          export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-          export AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN
-          export AWS_REGION=ap-northeast-1
-          EOF
-          
-          scp -o StrictHostKeyChecking=no ec2_aws_env.sh ubuntu@${{ secrets.EC2_INSTANCE_IP }}:~/.
-
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} << 'ENDSSH'
-            echo "config AWS token..."
-            mkdir -p ~/.aws
+            export AWS_ACCESS_KEY_ID="${{ env.AWS_ACCESS_KEY_ID }}"
+            export AWS_SECRET_ACCESS_KEY="${{ env.AWS_SECRET_ACCESS_KEY }}"
+            export AWS_SESSION_TOKEN="${{ env.AWS_SESSION_TOKEN }}"
+            export AWS_REGION="ap-northeast-1"
             
-            echo "[default]" > ~/.aws/credentials
-            echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
-            echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
-            echo "region = ap-northeast-1" >> ~/.aws/credentials
+            echo "AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:0:6}***"
+            echo "AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:0:6}***"
           
+            echo "AWS 凭证验证:"
+            aws sts get-caller-identity
+  
             if ! groups ubuntu | grep -q '\bdocker\b'; then
               echo "add docker group..."
               sudo usermod -aG docker ubuntu
@@ -144,10 +127,11 @@ jobs:
               sudo systemctl restart docker
             fi
           
-            if ! command -v aws &> /dev/null; then
-              echo "正在安装AWS CLI..."
-              sudo apt update
-              sudo apt install -y awscli
+            if ! command -v aws &> /dev/null || [[ $(aws --version 2>&1 | cut -d' ' -f1) != "aws-cli/2" ]]; then
+              echo "安装 AWS CLI v2..."
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+              unzip awscliv2.zip
+              sudo ./aws/install
               aws --version
             fi
           
