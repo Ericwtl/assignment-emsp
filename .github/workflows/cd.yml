@@ -127,12 +127,11 @@ jobs:
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} << 'ENDSSH'
             echo "config AWS token..."
             mkdir -p ~/.aws
-            cat << EOF > ~/.aws/credentials
-            [default]
-            aws_access_key_id = $AWS_ACCESS_KEY_ID
-            aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
-            region = ap-northeast-1
-            EOF
+            
+            echo "[default]" > ~/.aws/credentials
+            echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
+            echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
+            echo "region = ap-northeast-1" >> ~/.aws/credentials
           
             if ! groups ubuntu | grep -q '\bdocker\b'; then
               echo "add docker group..."
@@ -184,19 +183,21 @@ jobs:
           
             echo "waiting started..."
             sleep 10
+          docker logs myapp-container > container.log
+          cat container.log
           
-            for i in {1..5}; do
+          for i in {1..5}; do
               CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' myapp-container 2>/dev/null || echo "not-found")
               if [ "$CONTAINER_STATUS" = "running" ]; then
-                echo "✅ 容器运行中"
+                echo "✅ Docker is running."
                 break
               fi
-              echo "容器状态: $CONTAINER_STATUS (重试 $i/5)"
+              echo "container status: $CONTAINER_STATUS (retry $i/5)"
               sleep 5
             done
           
             if [ "$CONTAINER_STATUS" != "running" ]; then
-              echo "::error::容器启动失败! 最后状态: $CONTAINER_STATUS"
+              echo "::error::container start failed! final status: $CONTAINER_STATUS"
               docker logs myapp-container || true
               exit 1
             fi
