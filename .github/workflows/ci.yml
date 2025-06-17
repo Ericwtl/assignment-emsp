@@ -160,18 +160,18 @@ jobs:
           path: image.tar
           retention-days: 1  # 减少存储占用
 
-      - name: Create upload completion marker
-        run: |
-          echo "Upload completed at $(date)" > upload-status.txt
-          echo "completed" > .upload-completed
-        shell: bash
-
-      # CI 工作流中 (ci.yml)
-      - name: Upload completion marker
-        uses: actions/upload-artifact@v4
-        with:
-          name: upload-status
-          path: |
-            upload-status.txt
-            .upload-completed
-          retention-days: 1
+#      - name: Create upload completion marker
+#        run: |
+#          echo "Upload completed at $(date)" > upload-status.txt
+#          echo "completed" > .upload-completed
+#        shell: bash
+#
+#      # CI 工作流中 (ci.yml)
+#      - name: Upload completion marker
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: upload-status
+#          path: |
+#            upload-status.txt
+#            .upload-completed
+#          retention-days: 1

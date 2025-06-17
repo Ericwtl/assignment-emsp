@@ -25,20 +25,18 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           workflow: .github/workflows/ci.yml
           path: .status-files
-
-      - name: Wait for upload completion
-        run: |
-          while [ ! -f ".status-files/.upload-completed" ]; do
-            echo "Upload not completed yet. Waiting 15 seconds..."
-            sleep 15
-          done
-          echo "✅ Docker image upload confirmed completed"
-
-      - name: Verify upload timestamp
-        run: |
-          cat .status-files/upload-status.txt
-          echo "等待结束于 $(date)"
-
+#      - name: Wait for upload completion
+#        run: |
+#          while [ ! -f ".status-files/.upload-completed" ]; do
+#            echo "Upload not completed yet. Waiting 15 seconds..."
+#            sleep 15
+#          done
+#          echo "✅ Docker image upload confirmed completed"
+#
+#      - name: Verify upload timestamp
+#        run: |
+#          cat .status-files/upload-status.txt
+#          echo "等待结束于 $(date)"
       # 下载CI构建的镜像
       - name: Download Docker image
         uses: actions/download-artifact@v4
@@ -46,7 +44,7 @@ jobs:
           name: docker-image
           run-id: ${{ github.event.workflow_run.id }}
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           workflow: .github/workflows/ci.yml
 
       - name: Configure AWS Credentials
