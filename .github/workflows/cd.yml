@@ -151,7 +151,7 @@ jobs:
           
             docker run -d \
               --name myapp-container \
-              -e SPRING_DATASOURCE_URL=jdbc:postgresql://${{ steps.rds.outputs.DB_ENDPOINT }}/emsp-db \
+              -e SPRING_DATASOURCE_URL=jdbc:postgresql://${{ steps.rds.outputs.DB_ENDPOINT }}/emsp_db \
               -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} \
               -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASS }} \
               -p 80:8080 \
