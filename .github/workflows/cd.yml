@@ -22,6 +22,8 @@ jobs:
         with:
           name: docker-image
           run-id: ${{ github.event.workflow_run.id }}
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
