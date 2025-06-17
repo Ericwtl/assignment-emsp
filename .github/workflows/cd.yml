@@ -22,7 +22,8 @@ jobs:
           name: upload-status
           run-id: ${{ github.event.workflow_run.id }}
           repository: ${{ github.repository }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: .github/workflows/ci.yml
           path: .status-files
 
       - name: Wait for upload completion
@@ -46,6 +47,7 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: .github/workflows/ci.yml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
