@@ -31,7 +31,11 @@ jobs:
           role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
           #arn:aws:iam::591098699673:oidc-provider/token:actions:githubusercontent.com
           aws-region: ap-northeast-1
-          mask-aws-account-id: no
+          mask-aws-account-id: no  # 调试用
+
+      - name: Validate AWS credentials
+        run: |
+          aws sts get-caller-identity
 
       # 登录到ECR
       - name: Login to Amazon ECR
@@ -82,7 +86,6 @@ jobs:
           docker tag myapp:${{ github.sha }} ${{ steps.get-ecr-repo.outputs.repository_uri }}:${{ github.sha }}
           docker push ${{ steps.get-ecr-repo.outputs.repository_uri }}:${{ github.sha }}
 
-
       - name: Get RDS Endpoint
         id: rds
         run: |
@@ -102,29 +105,12 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} "echo 'SSH connection successful!'"
 
-      - name: Validate AWS credentials
-        run: |
-          aws sts get-caller-identity
-
-      - name: Get AWS Account ID
-        id: account-id
-        run: |
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "AWS Account ID: $ACCOUNT_ID"
-          echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
-          
-      - name: Login to Amazon ECR
-        run: |
-          ECR_ENDPOINT="${{ steps.account-id.outputs.account_id }}.dkr.ecr.ap-northeast-1.amazonaws.com"
-          echo "Logging into ECR endpoint: $ECR_ENDPOINT"
-          
-          aws ecr get-login-password --region ap-northeast-1 | \
-            docker login --username AWS --password-stdin $ECR_ENDPOINT
-
-      - name: Verify Login
-        run: |
-          docker info | grep "Username: AWS"
-          echo "ECR 登录成功!"
+      # 1. 配置AWS凭证 (使用OIDC)
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v2
+#        with:
+#          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
+#          aws-region: ap-northeast-1
 
       # 2. 生成临时凭证脚本
       - name: Generate AWS session script
@@ -165,6 +151,11 @@ jobs:
               aws --version
             fi
           
+#            if [[ ! "$REPO_URI" =~ ^[0-9]+\.dkr\.ecr\.[a-z0-9-]+\.[a-z]+\/ ]]; then
+#              echo "::error::invalid ECR repo URI: $REPO_URI"
+#              exit 1
+#            fi
+            
             REPO_URI="${{ steps.get-ecr-repo.outputs.repository_uri }}"
           
             echo "login ECR: $REPO_URI"
