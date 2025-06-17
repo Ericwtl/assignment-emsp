@@ -127,14 +127,6 @@ jobs:
               sudo systemctl restart docker
             fi
           
-            if ! command -v aws &> /dev/null || [[ $(aws --version 2>&1 | cut -d' ' -f1) != "aws-cli/2" ]]; then
-              echo "安装 AWS CLI v2..."
-              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-              unzip awscliv2.zip
-              sudo ./aws/install
-              aws --version
-            fi
-          
             REPO_URI="${{ steps.get-ecr-repo.outputs.repository_uri }}"
           
             echo "login ECR: $REPO_URI"
