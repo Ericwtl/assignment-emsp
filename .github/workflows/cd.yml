@@ -25,6 +25,14 @@ jobs:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
+          #arn:aws:iam::591098699673:oidc-provider/token:actions:githubusercontent.com
+          aws-region: ap-northeast-1
+          mask-aws-account-id: no
+
       # 登录到ECR
       - name: Login to Amazon ECR
         id: login-ecr
@@ -93,14 +101,6 @@ jobs:
         run: |
           ssh -T -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} "echo 'SSH connection successful!'"
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
-          #arn:aws:iam::591098699673:oidc-provider/token:actions:githubusercontent.com
-          aws-region: ap-northeast-1
-          mask-aws-account-id: no
 
       - name: Validate AWS credentials
         run: |
