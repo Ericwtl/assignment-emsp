@@ -78,15 +78,6 @@ jobs:
             exit 1
           fi
 
-      # === Docker构建准备 ===
-#      - name: Prepare Docker context
-#        run: |
-#          # 创建专门用于Docker的目录
-#          mkdir -p docker-context
-#          cp target/app.jar docker-context/
-#          echo "Docker context contents:"
-#          ls -l docker-context
-
       # 添加测试报告
       - name: Publish Test Report
         uses: dorny/test-reporter@v1
@@ -110,7 +101,6 @@ jobs:
             -p 5432:5432 \
             postgres:15-alpine
           
-          # 增强等待逻辑（重试机制）
           for i in {1..10}; do
             if docker run --rm --network container:ci-db \
               postgres:15-alpine pg_isready -U emsp -h localhost; then
