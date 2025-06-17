@@ -16,15 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     # 配置AWS凭证（使用Secret中存储的IAM访问密钥）
     steps:
-      - name: Download completion marker
-        uses: actions/download-artifact@v4
-        with:
-          name: upload-status
-          run-id: ${{ github.event.workflow_run.id }}
-          repository: ${{ github.repository }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: .github/workflows/ci.yml
-          path: .status-files
+#      - name: Download completion marker
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: upload-status
+#          run-id: ${{ github.event.workflow_run.id }}
+#          repository: ${{ github.repository }}
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          path: .status-files
 #      - name: Wait for upload completion
 #        run: |
 #          while [ ! -f ".status-files/.upload-completed" ]; do
@@ -45,7 +44,6 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: .github/workflows/ci.yml
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
