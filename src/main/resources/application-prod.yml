@@ -2,7 +2,7 @@ spring:
   jackson:
     time-zone: Asia/Shanghai
   datasource:
-    url: jdbc:postgresql://localhost:5432/emsp-db  # 指向 Docker 容器
+    url: jdbc:postgresql://emsp-db.c9ik4gyckpnn.ap-northeast-1.rds.amazonaws.com:5432/emsp_db  # 指向 Docker 容器
     username: emsp
     password: emsp123999
     driver-class-name: org.postgresql.Driver
