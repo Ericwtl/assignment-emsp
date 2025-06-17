@@ -106,6 +106,12 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} << 'ENDSSH'
+          
+            sudo usermod -aG docker ubuntu
+            newgrp docker
+          
+            sudo systemctl restart docker
+          
             aws ecr get-login-password --region ap-northeast-1 | docker login \
                 --username AWS \
                 --password-stdin ${{ steps.get-ecr-repo.outputs.repository_uri }}
