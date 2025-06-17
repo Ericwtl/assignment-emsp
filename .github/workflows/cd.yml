@@ -26,7 +26,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
           #arn:aws:iam::591098699673:oidc-provider/token:actions:githubusercontent.com
@@ -101,62 +101,103 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} "echo 'SSH connection successful!'"
 
-      # 部署到EC2
+      # 1. 配置AWS凭证 (使用OIDC)
+#      - name: Configure AWS credentials
+#        uses: aws-actions/configure-aws-credentials@v2
+#        with:
+#          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
+#          aws-region: ap-northeast-1
+
+      # 2. 生成临时凭证脚本
+      - name: Generate AWS session script
+        run: |
+          cat << 'EOF' > ec2_aws_env.sh
+          #!/bin/bash
+          export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+          export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+          export AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN
+          export AWS_REGION=ap-northeast-1
+          EOF
+          
+          scp -o StrictHostKeyChecking=no ec2_aws_env.sh ubuntu@${{ secrets.EC2_INSTANCE_IP }}:~/.
+
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} << 'ENDSSH'
+            echo "config AWS token..."
+            mkdir -p ~/.aws
+            cat << EOF > ~/.aws/credentials
+            [default]
+            aws_access_key_id = $AWS_ACCESS_KEY_ID
+            aws_secret_access_key = $AWS_SECRET_ACCESS_KEY
+            region = ap-northeast-1
+            EOF
           
-            sudo usermod -aG docker ubuntu
-            newgrp docker
-          
-            sudo systemctl restart docker
+            if ! groups ubuntu | grep -q '\bdocker\b'; then
+              echo "add docker group..."
+              sudo usermod -aG docker ubuntu
+              newgrp docker
+              sudo systemctl restart docker
+            fi
           
             if ! command -v aws &> /dev/null; then
+              echo "正在安装AWS CLI..."
               sudo apt update
-              sudo apt install -y unzip
-              curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-              unzip awscliv2.zip
-              sudo ./aws/install
+              sudo apt install -y awscli
               aws --version
             fi
-            
+          
             REPO_URI="${{ steps.get-ecr-repo.outputs.repository_uri }}"
-            echo "Trying to login ECR: $REPO_URI"
-            LOGIN_RESULT=$(echo "$(aws ecr get-login-password --region ap-northeast-1)" | \
-            docker login -u AWS --password-stdin $REPO_URI 2>&1)
-            echo "$LOGIN_RESULT"
-            echo "$LOGIN_RESULT" | grep -q "Login Succeeded" || { echo "::error::ECR login failed"; exit 1; }
-            
-            if docker ps -a | grep -q myapp-container; then
-              echo "stopping old container..."
-              timeout 30 docker stop myapp-container || true
-              docker rm myapp-container || true
-              else
-              echo "no any running container myapp-container"
+          
+            if [[ ! "$REPO_URI" =~ ^[0-9]+\.dkr\.ecr\.[a-z0-9-]+\.[a-z]+\/ ]]; then
+              echo "::error::invalid ECR repo URI: $REPO_URI"
+              exit 1
             fi
           
-            timeout 30 docker stop myapp-container || true
-            docker rm myapp-container || true
+            echo "login ECR: $REPO_URI"
+            aws ecr get-login-password --region ap-northeast-1 | \
+              docker login --username AWS --password-stdin $REPO_URI
           
-            IMAGE_TAG="$REPO_URI:${{ github.sha }}"
-            echo "start new container : $IMAGE_TAG"
+            if [[ $? -ne 0 ]]; then
+              echo "::error::ECR login failed"
+              exit 1
+            fi
+          
+            EXISTING_CONTAINER=$(docker ps -a -q -f name=myapp-container)
+            if [ ! -z "$EXISTING_CONTAINER" ]; then
+              echo "stop and delete old container..."
+              docker stop $EXISTING_CONTAINER || true
+              docker rm $EXISTING_CONTAINER || true
+            fi
+          
+            IMAGE_REF="$REPO_URI:${{ github.sha }}"
+            echo "start container: $IMAGE_REF"
+          
             docker run -d \
               --name myapp-container \
               -e SPRING_DATASOURCE_URL=jdbc:postgresql://${{ steps.rds.outputs.DB_ENDPOINT }}/emsp-db \
               -e SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USER }} \
               -e SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASS }} \
               -p 80:8080 \
-              --health-cmd="curl -f http://localhost:8080/health || exit 1" \
-              --health-interval=5s \
-              --health-retries=3 \
-              $IMAGE_TAG
+              $IMAGE_REF
           
-              sleep 10
-              CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' myapp-container)
-              if [ "$CONTAINER_STATUS" != "running" ]; then
-                echo "::error::Container failed to start!"
-                docker logs myapp-container
-                exit 1
+            echo "waiting started..."
+            sleep 10
+          
+            for i in {1..5}; do
+              CONTAINER_STATUS=$(docker inspect -f '{{.State.Status}}' myapp-container 2>/dev/null || echo "not-found")
+              if [ "$CONTAINER_STATUS" = "running" ]; then
+                echo "✅ 容器运行中"
+                break
               fi
+              echo "容器状态: $CONTAINER_STATUS (重试 $i/5)"
+              sleep 5
+            done
+          
+            if [ "$CONTAINER_STATUS" != "running" ]; then
+              echo "::error::容器启动失败! 最后状态: $CONTAINER_STATUS"
+              docker logs myapp-container || true
+              exit 1
+            fi
           ENDSSH
