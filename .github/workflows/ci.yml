@@ -1,8 +1,8 @@
 name: CI Pipeline
 
 on:
-#  push:
-#    branches: [master]
+  push:
+    branches: [master]
   pull_request: # 添加 pull_request 触发器
     branches: [master]
 
