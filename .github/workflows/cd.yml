@@ -46,7 +46,7 @@ jobs:
           aws ec2-instance-connect send-ssh-public-key \
             --region ap-northeast-1 \
             --instance-id i-0a4edfafee7b5376c \
-            --availability-zone ap-northeast-1 \
+            --availability-zone ap-northeast-1c \
             --instance-os-user ubuntu \
             --ssh-public-key "${{ secrets.SSH_PRIVATE_KEY }}"
 
