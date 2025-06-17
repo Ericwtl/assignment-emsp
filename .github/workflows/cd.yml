@@ -25,13 +25,6 @@ jobs:
           repository: ${{ github.event.workflow_run.head_repository.full_name }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
-          #arn:aws:iam::591098699673:oidc-provider/token:actions:githubusercontent.com
-          aws-region: ap-northeast-1
-
       # 登录到ECR
       - name: Login to Amazon ECR
         id: login-ecr
@@ -101,12 +94,37 @@ jobs:
           ssh -T -o StrictHostKeyChecking=no \
               ubuntu@${{ secrets.EC2_INSTANCE_IP }} "echo 'SSH connection successful!'"
 
-      # 1. 配置AWS凭证 (使用OIDC)
-#      - name: Configure AWS credentials
-#        uses: aws-actions/configure-aws-credentials@v2
-#        with:
-#          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
-#          aws-region: ap-northeast-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
+          #arn:aws:iam::591098699673:oidc-provider/token:actions:githubusercontent.com
+          aws-region: ap-northeast-1
+          mask-aws-account-id: no
+
+      - name: Validate AWS credentials
+        run: |
+          aws sts get-caller-identity
+
+      - name: Get AWS Account ID
+        id: account-id
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "AWS Account ID: $ACCOUNT_ID"
+          echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+          
+      - name: Login to Amazon ECR
+        run: |
+          ECR_ENDPOINT="${{ steps.account-id.outputs.account_id }}.dkr.ecr.ap-northeast-1.amazonaws.com"
+          echo "Logging into ECR endpoint: $ECR_ENDPOINT"
+          
+          aws ecr get-login-password --region ap-northeast-1 | \
+            docker login --username AWS --password-stdin $ECR_ENDPOINT
+
+      - name: Verify Login
+        run: |
+          docker info | grep "Username: AWS"
+          echo "ECR 登录成功!"
 
       # 2. 生成临时凭证脚本
       - name: Generate AWS session script
