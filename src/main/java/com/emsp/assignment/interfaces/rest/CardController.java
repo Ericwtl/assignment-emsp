@@ -43,20 +43,22 @@ public class CardController {
 
     @PutMapping("/{rfidUid}/assign")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void assignCardToAccount(
+    public Card assignCardToAccount(
             @PathVariable String rfidUid,
             @RequestParam @Valid String accountEmail
     ) {
-        cardStateService.assignCard(rfidUid, accountEmail);
+        Card card = cardStateService.assignCard(rfidUid, accountEmail);
+        return card;
     }
 
     @PutMapping("/{rfidUid}/status")    // POST /api/accounts/test@example.com/status
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void changeCardStatus(
+    public Card changeCardStatus(
             @PathVariable String rfidUid,
             @RequestParam CardStatus newStatus,
             @RequestParam @Valid String accountEmail
     ) {
-        cardStateService.changeCardStatus(rfidUid, newStatus, accountEmail);
+        Card card = cardStateService.changeCardStatus(rfidUid, newStatus, accountEmail);
+        return card;
     }
 }

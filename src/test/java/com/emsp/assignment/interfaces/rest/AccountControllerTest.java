@@ -104,12 +104,23 @@ class AccountControllerTest {
         AccountStatus newStatus = AccountStatus.ACTIVATED;
         String contractId = "AB123XYZ456789";
 
-        doNothing().when(accountService).changeAccountStatus(anyString(), any(AccountStatus.class), anyString());
+        // 准备模拟返回的 Account 对象
+        Account mockAccount = new Account();
+        mockAccount.setEmail(email);
+        mockAccount.setStatus(newStatus);
+        mockAccount.setContractId(contractId);
+
+        // 模拟 service 返回更新后的 Account
+        when(accountService.changeAccountStatus(anyString(), any(AccountStatus.class), anyString()))
+                .thenReturn(mockAccount);
 
         mockMvc.perform(put("/api/accounts/{email}/status", email)
                         .param("newStatus", newStatus.name())
                         .param("contractId", contractId))
-                .andExpect(status().isAccepted());
+                .andExpect(status().isAccepted())  // 改为 200 OK
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.status").value(newStatus.name()))
+                .andExpect(jsonPath("$.contractId").value(contractId));
 
         verify(accountService, times(1))
                 .changeAccountStatus(eq(email), eq(newStatus), eq(contractId));

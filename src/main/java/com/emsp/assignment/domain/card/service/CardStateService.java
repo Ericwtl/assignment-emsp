@@ -94,7 +94,7 @@ public class CardStateService {
     }
 
     @Transactional
-    public void assignCard(String rfidUid, String accountEmail) {
+    public Card assignCard(String rfidUid, String accountEmail) {
         Account account = accountRepository.findById(accountEmail)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountEmail));
 
@@ -110,7 +110,7 @@ public class CardStateService {
 
         card.setAccount(account);
         card.setStatus(CardStatus.ASSIGNED);
-        cardRepository.save(card);
+        return cardRepository.save(card);
     }
 
     @Transactional

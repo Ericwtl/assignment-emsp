@@ -6,10 +6,7 @@ import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.account.service.CardAssignmentService;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
-import com.emsp.assignment.infrastructure.exception.AccountNotFoundException;
-import com.emsp.assignment.infrastructure.exception.BusinessResponseException;
-import com.emsp.assignment.infrastructure.exception.ConcurrentModificationException;
-import com.emsp.assignment.infrastructure.exception.IllegalAccountOperationException;
+import com.emsp.assignment.infrastructure.exception.*;
 import com.emsp.assignment.infrastructure.persistence.AccountRepository;
 import com.emsp.assignment.infrastructure.persistence.CardRepository;
 import jakarta.transaction.Transactional;
@@ -21,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AccountService {
@@ -38,6 +36,12 @@ public class AccountService {
     }
 
     public Account createAccount(Account account) {
+        // 校验邮箱是否已存在
+        Optional<Account> existingAccount = accountRepository.findByEmail(account.getEmail());
+        if (existingAccount.isPresent()) {
+            // 这里先抛出自定义异常，后面讲异常处理
+            throw new EmailAlreadyExistsException("Email: " + account.getEmail() + " already exists");
+        }
         return accountRepository.save(account);
     }
 
@@ -50,7 +54,7 @@ public class AccountService {
     }
 
     @Transactional
-    public void changeAccountStatus(String email, AccountStatus newStatus, String contractId) {
+    public Account  changeAccountStatus(String email, AccountStatus newStatus, String contractId) {
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new AccountNotFoundException("Account not found: " + email));
 
@@ -92,6 +96,7 @@ public class AccountService {
                 });
             }
         }
+        return account;
     }
 
     private void validateStatusTransition(AccountStatus current, AccountStatus newStatus, String contractId) {
