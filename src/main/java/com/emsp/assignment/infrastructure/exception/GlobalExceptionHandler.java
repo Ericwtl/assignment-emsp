@@ -74,6 +74,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             IllegalArgumentException.class,
             IllegalCardOperationException.class,
             IllegalAccountOperationException.class,
+            EmailAlreadyExistsException.class,
             BusinessResponseException.class
     })
     public ResponseEntity<Object> handleBadRequestExceptions(RuntimeException ex, WebRequest request) {

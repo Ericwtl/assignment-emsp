@@ -39,12 +39,13 @@ public class AccountController {
 
     @PutMapping("/{email}/status")    // POST /api/accounts/test@example.com/status
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void changeAccountStatus(
+    public Account changeAccountStatus(
             @PathVariable @Valid String email,
             @RequestParam @Valid AccountStatus newStatus,
             @RequestParam(required = false) String contractId
     ) {
-        accountService.changeAccountStatus(email, newStatus, contractId);
+        Account updatedAccount = accountService.changeAccountStatus(email, newStatus, contractId);
+        return updatedAccount;
     }
 
     @GetMapping

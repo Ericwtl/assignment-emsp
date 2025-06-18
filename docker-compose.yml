@@ -1,5 +1,33 @@
 version: '3.9'
 services:
+  db:  # 使用 PostgreSQL（与您配置一致）
+    image: postgres:15-alpine
+    container_name: assignment-db
+    environment:
+      TZ: Asia/Shanghai
+      POSTGRES_DB: emsp_db  # 数据库名（需与 application.yml 一致）
+      POSTGRES_USER: emsp         # 用户名
+      POSTGRES_PASSWORD: emsp123  # 密码
+    ports:
+      - "5432:5432"  # 映射到本地端口
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # 数据持久化
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emsp"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-net
+
+volumes:
+  pgdata:
+
+networks:
+  app-net:
+    driver: bridge
+
+
 #  app:
 #    image: assignment-emsp
 #    build: . # 使用当前目录的Dockerfile
@@ -14,30 +42,3 @@ services:
 #        condition: service_healthy # 等待数据库就绪
 #    networks:
 #      - app-net
-
-  db:  # 使用 PostgreSQL（与您配置一致）
-    image: postgres:15-alpine
-    container_name: assignment-db
-    environment:
-      TZ: Asia/Shanghai
-      POSTGRES_DB: emsp_db  # 数据库名（需与 application.yml 一致）
-      POSTGRES_USER: emsp         # 用户名
-      POSTGRES_PASSWORD: emsp123  # 密码
-    ports:
-      - "5432:5432"  # 映射到本地端口
-    volumes:
-      - pgdata:/var/lib/postgresql/data  # 数据持久化
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - app-net
-
-volumes:
-  pgdata:
-
-networks:
-  app-net:
-    driver: bridge
