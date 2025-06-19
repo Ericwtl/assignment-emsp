@@ -1,5 +1,5 @@
 ✨ 项目概述
-基于Spring Boot的电商订单系统，实现多状态账户管理、卡片生命周期控制及实时数据校验，提供高并发业务场景下的稳定服务。
+基于Spring Boot的系统，实现多状态账户管理、卡片生命周期控制及实时数据校验。
 
 
 ⚡ 核心功能
@@ -25,6 +25,7 @@ PostgreSQL 15
 git clone https://github.com/Ericwtl/assignment-emsp.git
 
 # 2. 配置数据库（需提前创建）
+使用docker-compose 启动数据库，数据库表 通过执行flyway脚本 实现
 spring.datasource.url=jdbc:postgresql://localhost:5432/emsp_db
 spring.datasource.username=emsp
 spring.datasource.password=emsp_123
