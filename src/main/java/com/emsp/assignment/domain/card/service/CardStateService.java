@@ -24,7 +24,7 @@ public class CardStateService {
     private final CardRepository cardRepository;
 
     public CardStateService(AccountRepository accountRepository,
-                                 CardRepository cardRepository) {
+                            CardRepository cardRepository) {
         this.accountRepository = accountRepository;
         this.cardRepository = cardRepository;
     }
@@ -44,13 +44,19 @@ public class CardStateService {
         // 处理账户关联
         Account account = card.getAccount();
         String accountEmail = account != null ? account.getEmail() : null;
-        AccountStatus accountStaus = account != null ? account.getStatus() : null;
 
         // 校验2: 当状态为 ACTIVATED 或 ASSIGNED 时，账户必须存在
         if (status == CardStatus.ACTIVATED || status == CardStatus.ASSIGNED) {
-            if (accountEmail == null || accountEmail.isBlank() || accountStaus != AccountStatus.ACTIVATED) {
+            if (accountEmail == null || accountEmail.isBlank()) {
                 throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
-                        "Account is required and must be activated for ACTIVATED or ASSIGNED cards");
+                        "Account is required.");
+            }else{
+                account = accountRepository.findByEmail(accountEmail)
+                        .orElseThrow(() -> new AccountNotFoundException("Account not found: " + accountEmail));
+                if(account.getStatus() != AccountStatus.ACTIVATED){
+                    throw new BusinessResponseException(HttpStatus.BAD_REQUEST,
+                            "Account must be activated for ACTIVATED or ASSIGNED cards:" + accountEmail + ", account status: " + account.getStatus());
+                }
             }
 
             if (!accountRepository.existsById(accountEmail)) {
@@ -197,7 +203,7 @@ public class CardStateService {
             }
         }else{
             account = accountRepository.findById(card.getAccount().getEmail())
-            .orElseThrow(() -> new BusinessResponseException(HttpStatus.NOT_FOUND, "Account not found"));
+                    .orElseThrow(() -> new BusinessResponseException(HttpStatus.NOT_FOUND, "Account not found"));
         }
 
         if (account.getStatus() != AccountStatus.ACTIVATED) {

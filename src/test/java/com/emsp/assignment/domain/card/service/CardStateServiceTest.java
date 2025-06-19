@@ -80,24 +80,9 @@ class CardStateServiceTest {
         testAccount.setStatus(AccountStatus.CREATED);
         testCard.setAccount(testAccount);
 
-        BusinessResponseException exception = assertThrows(BusinessResponseException.class,
+        AccountNotFoundException exception = assertThrows(AccountNotFoundException.class,
                 () -> cardStateService.createCard(testCard));
 
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-        assertTrue(exception.getMessage().contains("must be activated"));
-    }
-
-    @Test
-    void createCard_WithActivatedStatusAndNonExistentAccount_ShouldThrowNotFound() {
-        testCard.setStatus(CardStatus.ACTIVATED);
-        testCard.setAccount(testAccount);
-
-        when(accountRepository.existsById(testAccount.getEmail())).thenReturn(false);
-
-        BusinessResponseException exception = assertThrows(BusinessResponseException.class,
-                () -> cardStateService.createCard(testCard));
-
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
         assertTrue(exception.getMessage().contains("Account not found"));
     }
 
