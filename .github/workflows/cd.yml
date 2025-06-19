@@ -14,9 +14,7 @@ jobs:
       id-token: write
       contents: read
     runs-on: ubuntu-latest
-    # 配置AWS凭证（使用Secret中存储的IAM访问密钥）
     steps:
-      # 下载CI构建的镜像
       - name: Download Docker image
         uses: actions/download-artifact@v4
         with:
@@ -29,20 +27,16 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::591098699673:role/GitHubActions-EC2-Deploy-Role
-          #arn:aws:iam::591098699673:oidc-provider/token:actions:githubusercontent.com
           aws-region: ap-northeast-1
-          mask-aws-account-id: no  # 调试用
+          mask-aws-account-id: no
 
       - name: Validate AWS credentials
         run: |
           aws sts get-caller-identity
 
-      # 登录到ECR
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-#        with:
-#          region: ap-northeast-1  # 明确指定ECR区域
 
       - name: Verify Permissions
         run: |
@@ -62,14 +56,12 @@ jobs:
             aws ecr create-repository --repository-name myapp --region ap-northeast-1
           fi
 
-      # 获取ECR仓库URI
       - name: Get ECR repository URI
         id: get-ecr-repo
         run: |
           echo "repository_uri=$(aws ecr describe-repositories --repository-names myapp --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_OUTPUT
         shell: bash
 
-      # 标记和推送镜像
       - name: Push Docker image
         run: |
           if [ ! -f "image.tar" ]; then
@@ -92,12 +84,10 @@ jobs:
           ENDPOINT=$(aws rds describe-db-instances --query 'DBInstances[0].Endpoint.Address' --output text)
           echo "DB_ENDPOINT=$ENDPOINT" >> $GITHUB_OUTPUT
 
-      # 设置SSH密钥
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-        # 添加密钥约束（非必需但推荐）
           key-fingerprint: ${{ secrets.SSH_KEY_FINGERPRINT }}
 
       - name: Test SSH Connection

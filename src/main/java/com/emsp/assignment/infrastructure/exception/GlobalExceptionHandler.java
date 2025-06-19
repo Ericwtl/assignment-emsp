@@ -1,11 +1,6 @@
 package com.emsp.assignment.infrastructure.exception;
 
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -23,16 +18,10 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    /**
-     * 获取请求路径
-     */
     private String getPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }
 
-    /**
-     * 构建基础错误响应
-     */
     private ErrorResponse buildBaseErrorResponse(HttpStatus status, String message, WebRequest request) {
         return ErrorResponse.builder()
                 .timestamp(Instant.now())
@@ -43,9 +32,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .build();
     }
 
-    /**
-     * 处理所有未捕获的异常
-     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -56,9 +42,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(buildBaseErrorResponse(status, message, request));
     }
 
-    /**
-     * 处理自定义业务异常
-     */
     @ExceptionHandler({
             AccountNotFoundException.class,
             CardNotFoundException.class
@@ -78,7 +61,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             BusinessResponseException.class
     })
     public ResponseEntity<Object> handleBadRequestExceptions(RuntimeException ex, WebRequest request) {
-        // 处理自定义状态异常
         if (ex instanceof BusinessResponseException rse) {
             return ResponseEntity.status(rse.getStatus())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -93,16 +75,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(buildBaseErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request));
     }
-
-    // 404处理
-//    @ExceptionHandler(NoHandlerFoundException.class)
-//    public ResponseEntity<Object> handleNoHandlerFound(
-//            NoHandlerFoundException ex, WebRequest request) {
-//        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//                .contentType(MediaType.APPLICATION_JSON)
-//                .body(buildBaseErrorResponse(HttpStatus.NOT_FOUND,
-//                        "Endpoint not found: " + ex.getRequestURL(), request));
-//    }
 
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(
@@ -124,9 +96,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(buildBaseErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request));
     }
 
-    /**
-     * 处理参数类型不匹配异常
-     */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Object> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex, WebRequest request) {
@@ -147,9 +116,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(buildBaseErrorResponse(HttpStatus.BAD_REQUEST, errorMessage, request));
     }
 
-    /**
-     * 处理字段验证异常
-     */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex,

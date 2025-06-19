@@ -3,7 +3,7 @@ name: CI Pipeline
 on:
   push:
     branches: [master]
-  pull_request: # 添加 pull_request 触发器
+  pull_request:
     branches: [master]
 
 jobs:
@@ -18,7 +18,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 设置Java环境
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
@@ -28,7 +27,6 @@ jobs:
           server-id: github
           settings-path: ${{ github.workspace }}
 
-      # 缓存Maven依赖，加速构建
       - name: Cache Maven dependencies
         uses: actions/cache@v3
         with:
@@ -39,7 +37,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # === 修复JAR文件名问题 ===
       - name: Build, test and package
         id: build-package
         run: |
@@ -53,7 +50,6 @@ jobs:
             -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
             -Dmaven.artifact.threads=10
 
-      # === JAR 文件验证合并 ===
       - name: Verify build artifacts
         run: |
           echo "Build artifacts:"
@@ -78,10 +74,9 @@ jobs:
             exit 1
           fi
 
-      # 添加测试报告
       - name: Publish Test Report
         uses: dorny/test-reporter@v1
-        if: always() # 即使测试失败也生成报告
+        if: always()
         with:
           name: Maven Test Results
           path: target/surefire-reports/*.xml
@@ -112,7 +107,6 @@ jobs:
             fi
           done
 
-      # Docker 构建和迁移执行
       - name: Build and run with migrations
         run: |
           docker build -t myapp:${{ github.sha }} .
@@ -137,17 +131,14 @@ jobs:
           
           docker exec ci-db psql -U emsp -d emsp_db -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public'"
 
-      # 清理临时数据库
       - name: Cleanup temporary DB
         if: always()
         run: docker rm -f ci-db
 
-      # === Docker 构建阶段优化 ===
       - name: Save Docker image
-        # 添加构建上下文信息
-        if: success()  # 在构建成功后保存
+        if: success()
         env:
-          DOCKER_BUILDKIT: 1  # 激活BuildKit
+          DOCKER_BUILDKIT: 1
         run: |
           docker save myapp:${{ github.sha }} -o image.tar
           ls -lh image.tar
@@ -158,20 +149,4 @@ jobs:
         with:
           name: docker-image
           path: image.tar
-          retention-days: 1  # 减少存储占用
-
-#      - name: Create upload completion marker
-#        run: |
-#          echo "Upload completed at $(date)" > upload-status.txt
-#          echo "completed" > .upload-completed
-#        shell: bash
-#
-#      # CI 工作流中 (ci.yml)
-#      - name: Upload completion marker
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: upload-status
-#          path: |
-#            upload-status.txt
-#            .upload-completed
-#          retention-days: 1
+          retention-days: 1

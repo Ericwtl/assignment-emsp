@@ -1,14 +1,11 @@
 package com.emsp.assignment.interfaces.rest;
 
-import com.emsp.assignment.domain.account.model.AccountStatus;
 import com.emsp.assignment.domain.card.model.Card;
 import com.emsp.assignment.domain.card.model.CardStatus;
 import com.emsp.assignment.domain.card.service.CardStateService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/cards")
@@ -51,7 +48,7 @@ public class CardController {
         return card;
     }
 
-    @PutMapping("/{rfidUid}/status")    // POST /api/accounts/test@example.com/status
+    @PutMapping("/{rfidUid}/status")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public Card changeCardStatus(
             @PathVariable String rfidUid,

@@ -34,7 +34,6 @@ public class AccountStateService {
                 orElseThrow(() -> new AccountNotFoundException("Account not found with email: " + email));
 
         account.deactivate();
-        // 级联停用所有关联卡
         account.getCards().forEach(card -> {
             card.deactivate();
             cardRepository.save(card);

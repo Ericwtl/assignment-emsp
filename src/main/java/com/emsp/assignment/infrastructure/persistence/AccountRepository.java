@@ -19,7 +19,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     @Query("SELECT DISTINCT a FROM Account a " +
             "LEFT JOIN FETCH a.cards c " +
             "WHERE a.lastUpdated BETWEEN :start AND :end " +
-            "AND (c IS NULL OR c.account.email = a.email)") // 确保正确关联
+            "AND (c IS NULL OR c.account.email = a.email)")
     Page<Account> findWithCardsByLastUpdatedBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,

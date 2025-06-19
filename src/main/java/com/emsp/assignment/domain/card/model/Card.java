@@ -23,9 +23,9 @@ public class Card {
     @JoinColumn(name = "account_email", referencedColumnName = "email")
     @JsonIdentityInfo(
             generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "email" // 使用邮箱作为唯一标识符
+            property = "email"
     )
-    @JsonIdentityReference(alwaysAsId = true) // 关键：仅序列化ID（邮箱）
+    @JsonIdentityReference(alwaysAsId = true)
     private Account account;
 
     @Pattern(regexp = "^\\d{4}-\\d{4}-\\d{4}-\\d{4}$")
@@ -37,7 +37,7 @@ public class Card {
     private CardStatus status = CardStatus.CREATED;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now(); // 添加默认值
+    private Instant createdAt = Instant.now();
 
     @PrePersist
     protected void onCreate() {

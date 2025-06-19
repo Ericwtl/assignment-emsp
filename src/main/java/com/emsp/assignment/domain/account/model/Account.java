@@ -49,11 +49,10 @@ public class Account {
         this.lastUpdated = LocalDateTime.now();
     }
 
-    @JsonIgnoreProperties("account") // 关键解决无限嵌套
+    @JsonIgnoreProperties("account")
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Card> cards = new ArrayList<>();
 
-    // 领域行为：激活账户
     public void activate() {
         if (this.status == AccountStatus.ACTIVATED) {
             throw new IllegalStateException("Account is already activated");
@@ -64,7 +63,6 @@ public class Account {
         this.status = AccountStatus.ACTIVATED;
     }
 
-    // 领域行为：停用账户
     public void deactivate() {
         if (this.status == AccountStatus.DEACTIVATED) {
             throw new IllegalStateException("Account is already deactivated");
@@ -72,7 +70,6 @@ public class Account {
         this.status = AccountStatus.DEACTIVATED;
     }
 
-    // 安全添加卡片方法
     public void addCard(Card card) {
         cards.add(card);
         card.setAccount(this);
